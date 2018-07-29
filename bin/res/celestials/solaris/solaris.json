@@ -1,0 +1,88 @@
+{
+    "lookup" : "solaris",
+    "name" : "Solaris",
+    "path" : "./res/celestials/solaris/",
+    "position" : {
+        "x" : 200,
+        "y" : 200
+    },
+    "scale" : {
+        "min" : 0.5,
+        "max" : 1
+    },
+
+    "physics" : {
+        "degradeVelocity" : 0.75
+    },
+
+    "images" : [
+        {
+            "name" : "img0",
+            "path" : "single.png"
+        }
+    ],
+    "spritesheets" : [
+        {
+            "path" : "solaris.png",
+            "frames" : [{
+                "name" : "idle0",
+                "x" : 0,
+                "y" : 0,
+                "width" : 128,
+                "height" : 80
+            },
+            {
+                "name" : "idle1",
+                "x" : 128,
+                "y" : 0,
+                "width" : 128,
+                "height" : 80
+            },
+            {
+                "name" : "idle2",
+                "x" : 0,
+                "y" : 80,
+                "width" : 128,
+                "height" : 80
+            },
+            {
+                "name" : "idle3",
+                "x" : 128,
+                "y" : 80,
+                "width" : 128,
+                "height" : 80
+            }]
+        }
+    ],
+
+    "sequences" : {
+        "updateRate" : 1,
+        "idles" : [
+            {
+                "name" : "shortIdle",
+                "duration" : 2000,
+                "looping" : true,
+                "frames" : [
+                    {"name" : "idle0", "hold" : 30 },
+                    {"name" : "idle1", "hold" : 40 },
+                    {"name" : "img0", "hold" : 40 },
+                    {"name" : "idle3", "hold" : 15 }
+                ]
+            }
+        ],
+        "walks" : [
+            {
+                "name" : "shortWalk",
+                "duration" : 2000,
+                "looping" : true,
+                "frames" : [
+                    {"name" : "idle0", "hold" : 30, "moveSpeed" : 1 },
+                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2 },
+                    {"name" : "idle2", "hold" : 40, "moveSpeed" : 2 },
+                    {"name" : "idle3", "hold" : 15, "moveSpeed" : 1 }
+                ]
+            }
+        ]
+    }
+
+}

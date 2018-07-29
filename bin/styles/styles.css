@@ -1,0 +1,41 @@
+html, body {
+    background: rgba(0, 0, 0, 0);
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.celestial {
+    display: flex;
+    cursor: pointer;
+    pointer-events: all;
+}
+.celestial .graphics {
+    position: relative;
+}
+.celestial .main-image {
+    position: absolute;
+    bottom: 0;
+}
+.celestial .coord {
+    position: absolute;
+    bottom: 0;
+    background: blue;
+    width: 2px;
+    height: 2px;
+}
+
+.context-menu.celestial {
+    background: red;
+    min-width: 250px;
+    min-height: 250px;
+    max-width: max-content;
+}
+
+
+

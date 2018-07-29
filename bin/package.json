@@ -1,0 +1,20 @@
+{
+  "name": "celestials",
+  "version": "0.1.0",
+  "main": "js/background.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "jaclynonacloud.Celestials",
+    "mac": {
+      "category": "screen.buddies"
+    }
+  },
+  "devDependencies": {
+    "electron": "^2.0.5",
+    "electron-builder": "^20.25.0"
+  }
+}
