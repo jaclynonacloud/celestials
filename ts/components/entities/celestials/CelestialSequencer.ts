@@ -144,10 +144,10 @@ namespace celestials.engines {
 
             //set the image
             let key:string = this._currentSequence.frames[this._frameIndex].name;
-            let promise = this._celestial.draw(this._celestial.getImage(key));
-            if(promise == null) console.log("MY PROMISE IS NULL");
-            if(promise != null)
-            await promise.then(img => {
+            // let promise = this._celestial.draw(this._celestial.getImage(key));
+            // if(promise == null) console.log("MY PROMISE IS NULL");
+            // if(promise != null)
+            // await promise.then(img => {
                 this._holdIndex++;
                 this._totalIndex++;
 
@@ -187,7 +187,7 @@ namespace celestials.engines {
 
                 console.log("4-Finish Sequence Draw Update");
 
-            });
+            // });
             
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
@@ -196,6 +196,7 @@ namespace celestials.engines {
         public get Sequences():ICelestialSequences { return this._sequences; }
         public get CurrentState():string { return this._currentState; }
         public get CurrentSequence():ICelestialSequence { return this._currentSequence; }
+        public get CurrentFrame():ICelestialFrame { return this._currentSequence[this._frameIndex]; }
 
 
 

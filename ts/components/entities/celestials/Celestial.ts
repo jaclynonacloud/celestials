@@ -239,7 +239,11 @@ namespace celestials.entities {
             console.log("1-Update");
             await this._logic.update();
             await this._sequencer.update();
-            await this._physics.update();
+            //now draw
+            this.draw(this._sequencer.CurrentFrame.name)
+            .then(img => {
+                this._physics.update();
+            });
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         private _onSequenceComplete() {

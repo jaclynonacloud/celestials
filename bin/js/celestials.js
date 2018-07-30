@@ -653,6 +653,7 @@ var celestials;
             };
             Celestial.prototype.update = function () {
                 return __awaiter(this, void 0, void 0, function () {
+                    var _this = this;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -663,9 +664,10 @@ var celestials;
                                 return [4, this._sequencer.update()];
                             case 2:
                                 _a.sent();
-                                return [4, this._physics.update()];
-                            case 3:
-                                _a.sent();
+                                this.draw(this._sequencer.CurrentFrame.name)
+                                    .then(function (img) {
+                                    _this._physics.update();
+                                });
                                 return [2];
                         }
                     });
@@ -1579,54 +1581,41 @@ var celestials;
             };
             CelestialSequencer.prototype.update = function () {
                 return __awaiter(this, void 0, void 0, function () {
-                    var key, promise;
-                    var _this = this;
+                    var key;
                     return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                if (this._currentSequence == null)
-                                    return [2];
-                                console.log("2-Sequencer");
-                                key = this._currentSequence.frames[this._frameIndex].name;
-                                promise = this._celestial.draw(this._celestial.getImage(key));
-                                if (promise == null)
-                                    console.log("MY PROMISE IS NULL");
-                                if (!(promise != null)) return [3, 2];
-                                return [4, promise.then(function (img) {
-                                        _this._holdIndex++;
-                                        _this._totalIndex++;
-                                        if (_this._holdIndex > _this._currentSequence.frames[_this._frameIndex].hold * _this._sequences.updateRate) {
-                                            _this._frameIndex++;
-                                            _this._holdIndex = 0;
-                                        }
-                                        if (_this._frameIndex > _this._currentSequence.frames.length - 1) {
-                                            if (_this._currentSequence.looping)
-                                                _this._frameIndex = 0;
-                                            else
-                                                _this.completeSequence();
-                                        }
-                                        if (_this._totalIndex > _this._currentSequence.duration * _this._sequences.updateRate) {
-                                            _this.completeSequence();
-                                        }
-                                        _this._celestial.Physics.resetGravity();
-                                        switch (_this._currentState) {
-                                            case CelestialSequencer.State.Idle:
-                                                _this._handleIdle();
-                                                break;
-                                            case CelestialSequencer.State.Walk:
-                                                _this._handleWalk();
-                                                break;
-                                            case CelestialSequencer.State.Climb:
-                                                _this._handleClimb();
-                                                break;
-                                        }
-                                        console.log("4-Finish Sequence Draw Update");
-                                    })];
-                            case 1:
-                                _a.sent();
-                                _a.label = 2;
-                            case 2: return [2];
+                        if (this._currentSequence == null)
+                            return [2];
+                        console.log("2-Sequencer");
+                        key = this._currentSequence.frames[this._frameIndex].name;
+                        this._holdIndex++;
+                        this._totalIndex++;
+                        if (this._holdIndex > this._currentSequence.frames[this._frameIndex].hold * this._sequences.updateRate) {
+                            this._frameIndex++;
+                            this._holdIndex = 0;
                         }
+                        if (this._frameIndex > this._currentSequence.frames.length - 1) {
+                            if (this._currentSequence.looping)
+                                this._frameIndex = 0;
+                            else
+                                this.completeSequence();
+                        }
+                        if (this._totalIndex > this._currentSequence.duration * this._sequences.updateRate) {
+                            this.completeSequence();
+                        }
+                        this._celestial.Physics.resetGravity();
+                        switch (this._currentState) {
+                            case CelestialSequencer.State.Idle:
+                                this._handleIdle();
+                                break;
+                            case CelestialSequencer.State.Walk:
+                                this._handleWalk();
+                                break;
+                            case CelestialSequencer.State.Climb:
+                                this._handleClimb();
+                                break;
+                        }
+                        console.log("4-Finish Sequence Draw Update");
+                        return [2];
                     });
                 });
             };
@@ -1647,6 +1636,11 @@ var celestials;
             });
             Object.defineProperty(CelestialSequencer.prototype, "CurrentSequence", {
                 get: function () { return this._currentSequence; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(CelestialSequencer.prototype, "CurrentFrame", {
+                get: function () { return this._currentSequence[this._frameIndex]; },
                 enumerable: true,
                 configurable: true
             });
