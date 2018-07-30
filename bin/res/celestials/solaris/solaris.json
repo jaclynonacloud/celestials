@@ -28,61 +28,121 @@
                 "name" : "idle0",
                 "x" : 0,
                 "y" : 0,
-                "width" : 128,
-                "height" : 80
+                "w" : 128,
+                "h" : 80
             },
             {
                 "name" : "idle1",
                 "x" : 128,
                 "y" : 0,
-                "width" : 128,
-                "height" : 80
+                "w" : 128,
+                "h" : 80
             },
             {
                 "name" : "idle2",
                 "x" : 0,
                 "y" : 80,
-                "width" : 128,
-                "height" : 80
+                "w" : 128,
+                "h" : 80
             },
             {
                 "name" : "idle3",
                 "x" : 128,
                 "y" : 80,
-                "width" : 128,
-                "height" : 80
+                "w" : 128,
+                "h" : 80
             }]
+        },
+        {
+            "path" : "solaris_climb.png",
+            "frames" : [
+                {
+                    "name" : "climb0",
+                    "x" : 0,
+                    "y" : 0,
+                    "w" : 80,
+                    "h" : 128
+                },
+                {
+                    "name" : "climb1",
+                    "x" : 0,
+                    "y" : 128,
+                    "w" : 80,
+                    "h" : 128
+                }
+            ]
         }
     ],
 
+    "logic" :  {
+        "updateRate" : 50,
+        "eagerness" : 5,
+        "attentionSpan" : 60
+    },
+
     "sequences" : {
         "updateRate" : 1,
-        "idles" : [
+        "idles" : {
+            "attentionSpan" : 50,
+            "sequences" : [
             {
                 "name" : "shortIdle",
-                "duration" : 2000,
+                "duration" : 200,
                 "looping" : true,
                 "frames" : [
                     {"name" : "idle0", "hold" : 30 },
                     {"name" : "idle1", "hold" : 40 },
-                    {"name" : "img0", "hold" : 40 },
+                    {"name" : "idle2", "hold" : 40 },
                     {"name" : "idle3", "hold" : 15 }
                 ]
             }
-        ],
-        "walks" : [
+        ]},
+        "walks" : {
+            "attentionSpan" : 50,
+            "sequences" : [
             {
                 "name" : "shortWalk",
-                "duration" : 2000,
+                "duration" : 300,
                 "looping" : true,
                 "frames" : [
-                    {"name" : "idle0", "hold" : 30, "moveSpeed" : 1 },
-                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2 },
+                    {"name" : "idle0", "hold" : 30, "moveSpeed" : 0.3 },
+                    {"name" : "idle1", "hold" : 1, "moveSpeed" : 2, "jumpForce" : 50},
+                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2},
                     {"name" : "idle2", "hold" : 40, "moveSpeed" : 2 },
                     {"name" : "idle3", "hold" : 15, "moveSpeed" : 1 }
                 ]
+            },
+            {
+                "name" : "shortHop",
+                "duration" : 250,
+                "looping" : true,
+                "frames" : [
+                    {"name" : "idle0", "hold" : 30, "moveSpeed" : 0.3 },
+                    {"name" : "idle1", "hold" : 1, "moveSpeed" : 2, "jumpForce" : 50},
+                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2},
+                    {"name" : "idle2", "hold" : 1, "moveSpeed" : 2, "jumpForce" : 80 },
+                    {"name" : "idle2", "hold" : 40, "moveSpeed" : 2 },
+                    {"name" : "idle3", "hold" : 1, "moveSpeed" : 1, "jumpForce" : 45 },
+                    {"name" : "idle3", "hold" : 15, "moveSpeed" : 1 }
+                ]
             }
-        ]
+        ]},
+        "climbs" : {
+            "attentionSpan" : 100,
+            "special" : true,
+            "sequences" : [
+            {
+                "name" : "shortClimb",
+                "duration" : 200,
+                "looping" : true,
+                "frames" : [
+                    {"name" : "climb0", "hold" : 30, "moveSpeed" : 1 },
+                    {"name" : "climb1", "hold" : 40, "moveSpeed" : 0.5 },
+                    {"name" : "climb0", "hold" : 40, "moveSpeed" : -0.5 },
+                    {"name" : "climb1", "hold" : 15, "moveSpeed" : 2 }
+                ]
+            }
+        ]}
     }
 
 }

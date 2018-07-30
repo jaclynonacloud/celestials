@@ -1,4 +1,6 @@
-const {app, BrowserWindow} = require('electron');
+const {app, shell, BrowserWindow} = require('electron');
+const path = require('path');
+const fs = require('fs');
   
   // Keep a global reference of the window object, if you don't, the window will
   // be closed automatically when the JavaScript object is garbage collected.
@@ -22,9 +24,13 @@ const {app, BrowserWindow} = require('electron');
   
     // and load the index.html of the app.
     win.loadFile('index.html');
+
+    //read files
+    console.log("Read FILES");
+    console.log(fromDir('./res/celestials/', '.json'));
   
     // Open the DevTools.
-    // win.webContents.openDevTools();
+    win.webContents.openDevTools();
   
     // Emitted when the window is closed.
     win.on('closed', () => {
@@ -60,3 +66,31 @@ const {app, BrowserWindow} = require('electron');
 
 
   app.disableHardwareAcceleration()
+
+
+
+
+
+
+
+
+  /*----------------------------- ELECTRON Methods --------------------*/
+/*https://stackoverflow.com/questions/25460574/find-files-by-extension-html-under-a-folder-in-nodejs*/
+function fromDir(startPath,filter){
+    if (!fs.existsSync(startPath)){
+        console.log("no dir ",startPath);
+        return;
+    }
+
+    var files=fs.readdirSync(startPath);
+    for(var i=0;i<files.length;i++){
+        var filename=path.join(startPath,files[i]);
+        var stat = fs.lstatSync(filename);
+        if (stat.isDirectory()){
+            fromDir(filename,filter); //recurse
+        }
+        else if (filename.indexOf(filter)>=0) {
+            console.log('-- found: ',filename);
+        }
+    }
+}

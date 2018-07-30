@@ -46,6 +46,11 @@ namespace celestials {
             .catch(e => console.log(`Could not get file from ${filename}\n${e}`));
     }
 
+    /**Basic linear interpolation. */
+    export function lerp(a:number, b:number, t:number) {
+        return (b-a) * t + a;
+    }
+
 
     /**Returns the max bounds of a node, including its children. */
     // export function maxBounds(node:HTMLElement) {

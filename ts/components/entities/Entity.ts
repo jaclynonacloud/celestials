@@ -11,17 +11,20 @@ namespace celestials.entities {
         physics?:engines.IPhysics;
     }
 
-    export class Entity {
+    export class Entity implements ILoadable {
         private _name:string;
         protected _node:HTMLElement;
         protected _container:HTMLElement;
         protected _mainImage:HTMLImageElement;
 
         protected _data:IEntity;
+        protected _imagesLookup:Dictionary<string, string>; //name, src
 
         protected _position:IPoint;
         protected _registrationPoint:IPoint;
         protected _direction:IPoint;
+
+        protected _isLoaded:boolean;
 
         constructor(name:string, node:HTMLElement, data:IEntity=null) {
             this._name = name;
@@ -47,13 +50,16 @@ namespace celestials.entities {
             }
 
             this._data = data;
+            this._imagesLookup = new Dictionary();
+
+            this._isLoaded = false;
 
 
             //setup with data, if applicable
             if(this._data != null) {
                 if(this._data.position != null) this._position = this._data.position;
                 if(this._data.registrationPoint != null) this._registrationPoint = this._data.registrationPoint;
-                if(this._direction != null) this._direction = this._data.direction;
+                if(this._data.direction != null) this._direction = this._data.direction;
             }
 
 
@@ -61,14 +67,38 @@ namespace celestials.entities {
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
+        /**Adds image to the image lookup. */
+        public addImage(key:string, src:string):boolean {
+            if(this._imagesLookup.containsKey(key))
+                return false;
+            this._imagesLookup.add(key, src);
+            return true;
+        }
+        /**Gets the image associated to the key. */
+        public getImage(key:string) {
+            if(this._imagesLookup.containsKey(key))
+                return this._imagesLookup.getValue(key);
+        }
+
+
+        public flipX() {
+            console.log("DIR: " + this._direction);
+            //flip the entity
+            this._direction.x *= -1;
+            let deg = this._direction.x == 1 ? 0 : 180;
+            this._node.style.transform = `rotateY(${deg}deg)`;
+        }
+        /*---------------------------------------------- ABSTRACTS -----------------------------------*/
+        /*---------------------------------------------- INTERFACES ----------------------------------*/
         public async load() {
             //set position
             console.log(this._position);
             this.X = this._position.x;
             this.Y = this._position.y;
         }
-        /*---------------------------------------------- ABSTRACTS -----------------------------------*/
-        /*---------------------------------------------- INTERFACES ----------------------------------*/
+        public unload() {
+            
+        }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
         public get Node():HTMLElement { return this._node; }
@@ -84,6 +114,7 @@ namespace celestials.entities {
             this._position.y = value;
             this._node.style.top = `${this._position.y}px`;
         }
+        public get Direction():IPoint { return this._direction; }
 
         public get RegistrationPoint():IPoint { return this._registrationPoint; }
 
@@ -101,6 +132,10 @@ namespace celestials.entities {
         }
         public get Height():number {
             return this._mainImage.getBoundingClientRect().height;
+        }
+
+        public get IsLoaded():boolean {
+            return this._isLoaded;
         }
 
         public get Bounds():Rect { 

@@ -90,6 +90,7 @@ namespace celestials.managers{
         public static update() {
             //update the current celestials
             for(let cel of CelestialsManager._instance._celestials)
+            if(cel.IsLoaded)
                 cel.update();
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/

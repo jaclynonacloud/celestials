@@ -1,4 +1,8 @@
 namespace celestials {
+    export interface ILoadable {
+        load();
+        unload();
+    }
     export interface IUpdateable {
         update();
     }

@@ -30,8 +30,15 @@ namespace celestials.systems {
             let spawnCelestialKey = [Key.Code.z];
             InputManager.addBinding("debug__spawnCelestial", new KeyBinding(this._spawnCelestial.bind(this), KeyBinding.State.Down, ...spawnCelestialKey));
 
+            let flipCelestialXKey = [Key.Code.x];
+            InputManager.addBinding("debug__flipCelestialX", new KeyBinding(this._flipCelestialX.bind(this), KeyBinding.State.Down, ...flipCelestialXKey));
+
             let switchStateKey = [Key.Code.v];
             InputManager.addBinding("debug__switchStateCelestial", new KeyBinding(this._switchState.bind(this), KeyBinding.State.Down, ...switchStateKey));
+
+
+            let pauseKey = [Key.Code.p];
+            InputManager.addBinding("debug__pauseApp", new KeyBinding(this._togglePause.bind(this), KeyBinding.State.Down, ...pauseKey));
         }
 
 
@@ -69,10 +76,21 @@ namespace celestials.systems {
             CelestialsManager.addCelestial("solaris");
         }
 
+        private _flipCelestialX() {
+            for(let celestial of CelestialsManager.Celestials)
+                celestial.flipX();
+        }
+
         private _switchState() {
             //switch to walk
             for(let celestial of CelestialsManager.Celestials)
-                celestial.Logic.changeState(logic.CelestialLogic.State.Walk);
+                celestial.Sequencer.changeState(engines.CelestialSequencer.State.Walk);
+        }
+
+
+        private _togglePause() {
+            if(App.Paused) App.resume();
+            else App.pause();
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/

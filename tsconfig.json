@@ -3,6 +3,8 @@
 		"target": "ES5",
 		"sourceMap": true,
 		"downlevelIteration": true,
-		"lib": ["es6" , "dom"]
+		"lib": ["es6" , "dom"],
+		"outFile": "bin/js/celestials.js",
+		"removeComments": true,
 	}
 }
