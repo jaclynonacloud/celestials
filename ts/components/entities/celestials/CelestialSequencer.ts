@@ -47,6 +47,7 @@ namespace celestials.engines {
         private _totalIndex:number; //holds the runtime of the sequence
 
         private _sequenceCompleteListener:Function;
+        private _stateCompleteListener:Function;
 
         constructor(celestial:Celestial) {
             this._celestial = celestial;
@@ -108,7 +109,8 @@ namespace celestials.engines {
 
         /**Changes to the given sequence. */
         public changeSequence(sequence:ICelestialSequence) {
-            if(this._currentSequence != null) this.reset();
+            // if(this._currentSequence != null) this.reset();
+            this.reset();
             this._currentSequence = sequence;
             console.log("CHANGED SEQUENCE: " + this._currentSequence.name);
         }      
@@ -121,11 +123,8 @@ namespace celestials.engines {
 
         public completeState() {
             console.log("COMPLETED STATE: " + this._currentState);
-            switch(this._currentState) {
-                case CelestialSequencer.State.Climb:
-                    this._completeClimb();
-                    break;
-            }
+            if(this._stateCompleteListener != null)
+                this._stateCompleteListener();
         }
         
         /*-------------- WIRES ------------*/
@@ -136,59 +135,66 @@ namespace celestials.engines {
         public removeSequenceCompleteListener() {
             this._sequenceCompleteListener = null;
         }
+
+        public addStateCompleteListener(listener:Function) {
+            this._stateCompleteListener = listener;
+        }
+        public removeStateCompleteListener() {
+            this._stateCompleteListener = null;
+        }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
-        public async update() {
-            if(this._currentSequence == null) return;
-            console.log("2-Sequencer");
+        public update() {
 
-            //set the image
-            let key:string = this._currentSequence.frames[this._frameIndex].name;
-            // let promise = this._celestial.draw(this._celestial.getImage(key));
-            // if(promise == null) console.log("MY PROMISE IS NULL");
-            // if(promise != null)
-            // await promise.then(img => {
-                this._holdIndex++;
-                this._totalIndex++;
+            return new Promise((resolve, reject) => {
+                try {
+                    //set the image
+                    let key:string = this._currentSequence.frames[this._frameIndex].name;
+                    this._holdIndex++;
+                    this._totalIndex++;
 
-                //do testing
-                //test frame hold
-                if(this._holdIndex > this._currentSequence.frames[this._frameIndex].hold * this._sequences.updateRate) {
-                    this._frameIndex++;
-                    this._holdIndex = 0;
-                }
-                //see if this is a looping sequence
-                if(this._frameIndex > this._currentSequence.frames.length-1) {
-                    if(this._currentSequence.looping) //just reset the index
-                        this._frameIndex = 0;
-                    else //end the sequence
+                    //do testing
+                    //test frame hold
+                    if(this._holdIndex > this._currentSequence.frames[this._frameIndex].hold * this._sequences.updateRate) {
+                        this._frameIndex++;
+                        this._holdIndex = 0;
+                    }
+                    //see if this is a looping sequence
+                    if(this._frameIndex > this._currentSequence.frames.length-1) {
+                        if(this._currentSequence.looping) //just reset the index
+                            this._frameIndex = 0;
+                        else //end the sequence
+                            this.completeSequence();
+                    }
+
+                    //see if sequence time is complete
+                    if(this._totalIndex > this._currentSequence.duration * this._sequences.updateRate) {
                         this.completeSequence();
+                    }     
+                    
+                    //reset things
+                    this._celestial.Physics.resetGravity();
+                    //handle state differences
+                    resolve();
+
+                    // switch(this._currentState) {
+                    //     case CelestialSequencer.State.Idle:
+                    //         this._handleIdle();
+                    //         break;
+                    //     case CelestialSequencer.State.Walk:
+                    //         this._handleWalk();
+                    //         break;
+                    //     case CelestialSequencer.State.Climb:
+                    //         this._handleClimb();
+                    //         break;
+                    // }
+                    // resolve();
                 }
-
-                //see if sequence time is complete
-                if(this._totalIndex > this._currentSequence.duration * this._sequences.updateRate) {
-                    this.completeSequence();
-                }     
-                
-                //reset things
-                this._celestial.Physics.resetGravity();
-                //handle state differences
-                switch(this._currentState) {
-                    case CelestialSequencer.State.Idle:
-                        this._handleIdle();
-                        break;
-                    case CelestialSequencer.State.Walk:
-                        this._handleWalk();
-                        break;
-                    case CelestialSequencer.State.Climb:
-                        this._handleClimb();
-                        break;
+                catch(e) {
+                    reject();
                 }
+            });
 
-                console.log("4-Finish Sequence Draw Update");
-
-            // });
-            
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
@@ -196,61 +202,7 @@ namespace celestials.engines {
         public get Sequences():ICelestialSequences { return this._sequences; }
         public get CurrentState():string { return this._currentState; }
         public get CurrentSequence():ICelestialSequence { return this._currentSequence; }
-        public get CurrentFrame():ICelestialFrame { return this._currentSequence[this._frameIndex]; }
-
-
-
-
-        /*---------------------------------------------- STATES --------------------------------------*/
-        private _handleIdle() {
-            //do nothing yet...
-        }
-        private _handleWalk() {
-            //get the walk properties
-            let moveSpeed:number = this._currentSequence.frames[this._frameIndex].moveSpeed;
-            let jumpForce:number = this._currentSequence.frames[this._frameIndex].jumpForce;
-            //look for property value
-            if(moveSpeed != null)
-                this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
-            if(jumpForce != null)
-                this._celestial.Physics.addForceY(-jumpForce);
-        }
-
-
-        private _handleClimb() {
-            this._celestial.Physics.setGravity(0);
-            //push against wall
-            // this._celestial.Physics.addForceX(10 * -this._celestial.Direction.x);
-            console.log("SNAP");
-            switch(this._celestial.Physics.LastTouchedWall) {
-                case Physics.Wall.Left:
-                    this._celestial.Physics.snapToLeft();
-                    break;
-                case Physics.Wall.Right:
-                    this._celestial.Physics.snapToRight();
-            }
-            //get the climb properties
-            let moveSpeed:number = this._currentSequence.frames[this._frameIndex].moveSpeed || 10;
-            //set the property
-            this._celestial.Physics.addForceY(-moveSpeed);
-        }
-        private _completeClimb() {
-            console.log("JUMP OFF WALL!");
-            console.log("LAST TOUCHED WALL: " + this._celestial.Physics.LastTouchedWall);
-            //jump off wall
-            switch(this._celestial.Physics.LastTouchedWall) {
-                case Physics.Wall.Left:
-                    this._celestial.Physics.addForceX(randomRange(35, 80));
-                    this._celestial.flipX();
-                    break;
-                case Physics.Wall.Right:
-                    this._celestial.Physics.addForceX(randomRange(-35, -80));
-                    this._celestial.flipX();
-            }
-        }
-
-        
-
+        public get CurrentFrame():ICelestialFrame {return this._currentSequence.frames[this._frameIndex]; }
     }
 
 }

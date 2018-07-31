@@ -85,16 +85,28 @@ namespace celestials.entities {
             console.log("DIR: " + this._direction);
             //flip the entity
             this._direction.x *= -1;
+            this.setDirectionX(this._direction.x);
+        }
+        public setDirectionX(value:number) {
+            this._direction.x = value;
             let deg = this._direction.x == 1 ? 0 : 180;
             this._node.style.transform = `rotateY(${deg}deg)`;
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         public async load() {
-            //set position
-            console.log(this._position);
-            this.X = this._position.x;
-            this.Y = this._position.y;
+            return new Promise((resolve, reject) => {
+                try {
+                     //set position
+                    console.log(this._position);
+                    this.X = this._position.x;
+                    this.Y = this._position.y;
+                    resolve();
+                }
+                catch(e) {
+                    reject();
+                }
+            });
         }
         public unload() {
             

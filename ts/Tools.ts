@@ -69,7 +69,7 @@ namespace celestials {
      * A key value pairing list.
      */
     export class Dictionary<K, V> {
-        private _pairs:Array<object>;
+        private _pairs:Array<[K,V]>;
         constructor() {
             this._pairs = new Array();
         }
@@ -105,7 +105,7 @@ namespace celestials {
             return false;
         }
 
-        containsValue(value:K):boolean {
+        containsValue(value:V):boolean {
             for(let i = 0; i < this._pairs.length; i++)
                 if(this._pairs[i][1] == value) return true;
             return false;
@@ -116,6 +116,10 @@ namespace celestials {
             for(let i = 0; i < this._pairs.length; i++)
                 list.push(this._pairs[i][1]);
             return list;
+        }
+
+        get FullList():Array<[K,V]> {
+            return this._pairs;
         }
     }
 

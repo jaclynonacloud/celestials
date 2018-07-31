@@ -47,6 +47,8 @@ namespace celestials.engines {
         }
         public addForceY(value:number) {
             this._velocityY += value;
+            console.log("VEL: " + value);
+            this.update();
         }
         public setGravity(value:number) {
             this._gravity = value;
@@ -116,7 +118,6 @@ namespace celestials.engines {
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         async update() {
-            console.log("5-Physics");
             //degrade velocity
             this._velocityX *= this._degradeVelocity;
             this._velocityY *= this._degradeVelocity;

@@ -39,50 +39,47 @@ namespace celestials.entities {
 
             this._eventsRegistry = new Dictionary();
             this._eventsRegistry.add("sequenceComplete", this._onSequenceComplete.bind(this));
+            this._eventsRegistry.add("stateComplete", this._onStateComplete.bind(this));
             this._eventsRegistry.add("wallHit", this._onWallHit.bind(this));
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
-        public draw(src:string) {
-            console.log("SRC: " + src);
-            if(src == null || src == "") return null;
-            console.log("3-Draw");
+        /**
+         * Draws an image into the main image container via an src string.
+         * @param src The src to load into the string.
+         * @returns A Promise(HTMLImageElement) with the loaded image as an argument.
+         */
+        public draw(src:string):Promise<HTMLImageElement> {
 
-            let img = this._mainImage;
-            let registrationOffset = this.RegistrationOffset;
-            let regPoint = this._registrationPoint;
-            let physics = this._physics;
+            if(src == this._mainImage.src) return new Promise(function(resolve, reject) { resolve(this._mainImage);})
 
-            if(src == this._mainImage.src) return new Promise(function(resolve, reject) { resolve(img);})
-
-            return new Promise(function(resolve, reject) {    
-                img.onload = () => {
+            return new Promise((resolve, reject) => {
+                this._mainImage.onload = () => {
                     console.log("CHANGING IMAGE");
                     //set the scale
-                    let width = img.naturalWidth * this._scale;
-                    let height = img.naturalHeight * this._scale;
-                    img.style.width = `${width}px`;
-                    img.style.height = `${height}px`;
-
-                    let offset = {
-                        x: width * regPoint.x,
-                        y: height - (height * regPoint.y)
-                    };
+                    let width = this._mainImage.naturalWidth * this._scale;
+                    let height = this._mainImage.naturalHeight * this._scale;
+                    this._mainImage.style.width = `${width}px`;
+                    this._mainImage.style.height = `${height}px`;
 
                     //offset by registration point
-                    let x = `-${offset.x}px`;
-                    let y = `-${offset.y}px`;
-                    // img.parentElement.style.transform = `translate(${x} ${y})`;
-                    img.style.left = `-${x}px`;
-                    img.style.bottom = `-${y}px`;
-                    console.log("3.5-Finish New Draw");
+                    let x = `-${this.RegistrationOffset.x}px`;
+                    let y = `-${this.RegistrationOffset.y}px`;
+                    
+                    this._mainImage.style.left = x;
+                    this._mainImage.style.bottom = y;
 
-                    resolve(img);
+                    resolve(this._mainImage);
                 }
-                img.onerror = () => reject(new Error("Image could not be loaded!"));
+                this._mainImage.onerror = () => reject(new Error("Image could not be loaded!"));
     
-                img.src = src;
+                this._mainImage.src = src;
             });
+
+        }
+
+        public drawCurrentFrame() {
+            return this.draw(this.getImage(this._sequencer.CurrentFrame.name));
         }
         
         // draw(src:string) {
@@ -141,88 +138,125 @@ namespace celestials.entities {
         /**
          * Loads the Celestial's graphics and other data.
          */
-        public async load() {
-            try {
-                await super.load();
-                let data:ICelestial = this._data;
-                //create logic
-                this._sequencer = new engines.CelestialSequencer(this);
-                //create physics
-                this._physics = new engines.Physics(this);
-                //create logic
-                this._logic = new logic.CelestialLogic(this, this.Data.logic || null);
-                //set the scale
-                this._scale = randomRange(data.scale.min, data.scale.max);
-                
+        public load() {
+            return new Promise((resolve, reject) => {
+                try {
+                    super.load()
+                        .then(() => {
+                            let data:ICelestial = this._data;
+                            //create logic
+                            this._sequencer = new engines.CelestialSequencer(this);
+                            //create physics
+                            this._physics = new engines.Physics(this);
+                            //create logic
+                            this._logic = new logic.CelestialLogic(this, this.Data.logic || null);
+                            //set the scale
+                            this._scale = randomRange(data.scale.min, data.scale.max);
+                            
+    
+                            //iterate through each image
+                            let promises = new Array();
+                            for(let imgData of data.images) {
+                                promises.push(
+                                    new Promise((res, rej) => {
+                                        try {
+                                            //go get the images to load
+                                            let img = document.createElement("img");
+                                            //listen for load
+                                            img.onload = () => {
+                                                //set the image
+                                                console.log("loaded image!");
+                                                // imgData.src = img.src;
+                                                if(!this.addImage(imgData.name, img.src))
+                                                    throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
+                                                res();
+                                            }
+                                            //load the image
+                                            img.src = data.path + imgData.path;
+                                        }
+                                        catch(e) {
+                                            rej();
+                                        }
+                                    })
+                                );
+                            }
+                            //iterate through each spritesheet
+                            for(let spritesheet of data.spritesheets) {
+                                promises.push(
+                                    new Promise((res, rej) => {
+                                        try {
+                                            //go get the images to load
+                                            let img = document.createElement("img");
+                                            //listen for laod
+                                            img.onload = () => {
+                                                //set each frame
+                                                for(let frame of spritesheet.frames) {
+                                                    console.log("loaded sprite!");
+                                                    //give the chop
+                                                    cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
+                                                        //set as the image
+                                                        // frame.src = crop.src;
+                                                        if(!this.addImage(frame.name, crop.src))
+                                                            throw new Error(`An image already exists belonging to ${this.Name} - ${frame.name}.  Please choose a unique name.`);
+                                                        res();
+                                                    });
+                                                }
+                                            }
+                                            //load the spritesheet image
+                                            img.src = data.path + spritesheet.path;
+                                        }
+                                        catch(e) {
+                                            rej();
+                                        }
+                                    })
+                                );
+                            }
 
-                //iterate through each image
-                for(let imgData of data.images) {
-                    //go get the images to load
-                    let img = document.createElement("img");
-                    //listen for load
-                    img.onload = () => {
-                        console.log("LOADED");
-                        //set the image
-                        // imgData.src = img.src;
-                        if(!this.addImage(imgData.name, img.src))
-                            throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
-                    }
-                    //load the image
-                    img.src = data.path + imgData.path;
-                    console.log("LOAD THE IMAGE");
+                            //once all images are loaded - continue
+                            Promise.all(promises)
+                                .then(() => {
+                                    console.log("loaded all images!");
+                                    //TEST REQUIREMENTS of this entity
+                                    //needs a lookup
+                                    if(data.lookup == null)
+                                        throw new Error("Celestial has no lookup property!");
+                                    //needs a name
+                                    if(data.name == null)
+                                        throw new Error("Celestial has no name property!");
+                                    //needs images
+                                    if(data.images == null && data.spritesheets == null)
+                                        throw new Error("No images/spritesheets were supplied.");
+            
+                                    //put the container in
+                                    this._container.appendChild(this._node);
+            
+            
+                                    console.log(this._imagesLookup.FullList);
+                                    //load the first logic
+                                    this._logic.load()
+                                        .then(() => {
+                                            resolve();
+                                            this._isLoaded = true;
+                                        });
+                                    
+            
+                                    //wire listeners
+                                    this._sequencer.addSequenceCompleteListener(this._eventsRegistry.getValue("sequenceComplete"));
+                                    this._sequencer.addStateCompleteListener(this._eventsRegistry.getValue("stateComplete"));
+                                    this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
+                                    //TODO I've setup the click event, don't readd unless removing this one
+                                    this._node.addEventListener("click", () => console.log("I'VE CLICKED: " + this.Name));
+                                });
+    
+    
+                        });
+                    
+                }  
+                catch(e) {
+                    reject(new Error("Could not load Celestial. \n" + e));
                 }
-                //iterate through each spritesheet
-                for(let spritesheet of data.spritesheets) {
-                    //go get the images to load
-                    let img = document.createElement("img");
-                    //listen for laod
-                    img.onload = () => {
-                        //set each frame
-                        for(let frame of spritesheet.frames) {
-                            //give the chop
-                            //give the chop
-                            cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
-                                //set as the image
-                                // frame.src = crop.src;
-                                if(!this.addImage(frame.name, crop.src))
-                                    throw new Error(`An image already exists belonging to ${this.Name} - ${frame.name}.  Please choose a unique name.`);
-                            });
-                        }
-                    }
-                    //load the spritesheet image
-                    img.src = data.path + spritesheet.path;
-                }
 
-                //TEST REQUIREMENTS of this entity
-                //needs a lookup
-                if(data.lookup == null)
-                    throw new Error("Celestial has no lookup property!");
-                //needs a name
-                if(data.name == null)
-                    throw new Error("Celestial has no name property!");
-                //needs images
-                if(data.images == null && data.spritesheets == null)
-                    throw new Error("No images/spritesheets were supplied.");
-
-                //put the container in
-                this._container.appendChild(this._node);
-
-
-                //load the first logic
-                await this._logic.load();
-                
-
-                this._isLoaded = true;
-
-                //wire listeners
-                this._sequencer.addSequenceCompleteListener(this._eventsRegistry.getValue("sequenceComplete"));
-                this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
-                
-                this._node.addEventListener("click", () => console.log("I'VE CLICKED: " + this.Name));
-            }  
-            catch(e) {
-                console.log("Could not load Celestial. \n" + e);
-            }
+            });            
         }
 
         /**
@@ -232,18 +266,17 @@ namespace celestials.entities {
 
             //remove listeners
             this._sequencer.removeSequenceCompleteListener();
+            this._sequencer.removeStateCompleteListener();
             this._physics.removeWallHitListener();
         }
 
-        public async update() {
-            console.log("1-Update");
-            await this._logic.update();
-            await this._sequencer.update();
-            //now draw
-            this.draw(this._sequencer.CurrentFrame.name)
-            .then(img => {
-                this._physics.update();
-            });
+        public update() {
+            //update sequence
+            // logic > sequencer > draw > physics
+            this._logic.update()
+                .then(() => this._sequencer.update())
+                    .then(() => this.draw(this.getImage(this._sequencer.CurrentFrame.name)))
+                        .then(img => this._physics.update());
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         private _onSequenceComplete() {
@@ -251,6 +284,10 @@ namespace celestials.entities {
             //TODO set a sequence hierarchy either here or in logic.  Probably in logic.
             // this._sequencer.changeSequence(this._sequencer.Sequences.idles[0]);
             this._logic.next();
+        }
+
+        private _onStateComplete() {
+            this._logic.handleStateComplete();
         }
 
         private _onWallHit(which:number) {

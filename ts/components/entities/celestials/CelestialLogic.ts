@@ -71,34 +71,47 @@ namespace celestials.logic {
             let random:number = randomRange(0, 1);
             //don't flip on climb
             if(this._celestial.Sequencer.CurrentState != engines.CelestialSequencer.State.Climb) {
+                console.log("I wanna flip!");
                 let wantToFlipX:number = lerp((this._eagerness * 5), 100, random);
                 if(wantToFlipX > this._attentionSpan) this._celestial.flipX();
             }
             
         }
 
-
-        public async handleWallHit(which:number) {
+        /**
+         * Called by Physics engine when wall is hit.
+         * @param which The wall that was hit.  Defined by Physics.Wall
+         */
+        public handleWallHit(which:number) {
             //flip us if we hit the edges
             if(which == Physics.Wall.Left || which == Physics.Wall.Right) {
                 //TODO see if we want to climb - 50/50
                 if(randomRange(0, 1) > 0) {
                     //start the climb
                     let state:string = this._celestial.Sequencer.changeState(engines.CelestialSequencer.State.Climb);
+                    //if we can't climb, abort!
                     if(state != engines.CelestialSequencer.State.Climb) return;
                     //try to get a climb sequence
                     let sequence = this._celestial.Sequencer.getRandomStateSequence(state);
                     if(sequence != null) {
-                        await this._celestial.Sequencer.changeSequence(sequence);
-                        await this._celestial.Sequencer.update();
-                        console.log("6-Handle Wall");
-                        this.reset();
-                        await this._celestial.flipX();
-                        //snap to respective all
-                        if(which == Physics.Wall.Left)
-                            this._celestial.Physics.snapToLeft();
-                        if(which == Physics.Wall.Right)
-                            this._celestial.Physics.snapToRight();
+                        this._celestial.Sequencer.changeSequence(sequence);
+                        //wait for frame to draw -- so physics can be accurate
+                        this._celestial.drawCurrentFrame()
+                            .then(() => {
+                                console.log("6-Handle Wall");
+                                this.reset();
+                                //snap to respective all
+                                switch(which) {
+                                    case Physics.Wall.Left:
+                                        this._celestial.Physics.snapToLeft();
+                                        this._celestial.setDirectionX(1);
+                                        break;
+                                    case Physics.Wall.Right:
+                                        this._celestial.Physics.snapToRight();
+                                        this._celestial.setDirectionX(-1);
+                                }
+                            });
+                        
                     }
                     //if we couldn't find a climb, pretend we didn't try
                     // else
@@ -107,40 +120,109 @@ namespace celestials.logic {
             }
         }
 
+        handleStateComplete() {
+            let state:string = this._celestial.Sequencer.CurrentState;
+
+            //is it real?
+                //uses the state name to look for a function matching this: _complete[State]
+                let funcName:string = `_complete${state[0].toUpperCase()}${state.substr(1)}`;
+                if(this[funcName] != null)
+                    this[funcName]();
+        }
+
         public reset() {
             this._tick = 0;
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         public load() {
-            //set the first sequence
-            let state:string = this._celestial.Sequencer.changeState(this._celestial.Sequencer.getRandomState());
-            let sequence:engines.ICelestialSequence = this._celestial.Sequencer.getRandomStateSequence(state);
-            this._celestial.Sequencer.changeSequence(sequence);
-            this._celestial.draw(this._celestial.getImage(sequence.name));
-            console.log("LOADED FIRST LOGIC");
+            return new Promise((resolve, reject) => {
+
+                try {
+                    //set the first sequence
+                    let state:string = this._celestial.Sequencer.changeState(this._celestial.Sequencer.getRandomState());
+                    let sequence:engines.ICelestialSequence = this._celestial.Sequencer.getRandomStateSequence(state);
+                    this._celestial.Sequencer.changeSequence(sequence);
+                    let frameName = this._celestial.Sequencer.CurrentFrame.name;
+                    this._celestial.draw(this._celestial.getImage(frameName))
+                        .then((img) => {
+                            resolve();
+                            console.log("LOADED FIRST LOGIC");
+                        });
+                    
+                }
+                catch(e) {
+                    reject(new Error("Could not load Logic on " + this._celestial.Name + "\n" + e));
+                }
+
+            });
+            
         }
         public unload() {
 
         }
 
         public update() {
-            return;
-            this._updateTick++;
-            if(this._updateTick > this._updateRate)
-                this._updateTick = 0;
+            return new Promise((resolve, reject) => {
+                
 
-            if(this._updateTick != 0) return;
-            //decide how often we just decide to change direction
+                //handle states
+                let state:string = this._celestial.Sequencer.CurrentState;
+                console.log("STATE: " + state);
 
-            //get a random number
-            let random:number = randomRange(0, 1);
-            let wantToFlipX:number = lerp((this._eagerness * 5), 100, random);
-            if(wantToFlipX > this._attentionSpan) this._celestial.flipX();
-            
+                //is it real?
+                //uses the state name to look for a function matching this: _handle[State]
+                let funcName:string = `_handle${state[0].toUpperCase()}${state.substr(1)}`;
+                if(this[funcName] != null)
+                    this[funcName]();
+
+
+                resolve();
+            });
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
+
+
+        /*---------------------------------------------- STATES --------------------------------------*/
+        private _handleIdles() {
+            //do nothing yet...
+        }
+        private _handleWalks() {
+            let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
+            //get the walk properties
+            let moveSpeed:number = frame.moveSpeed;
+            let jumpForce:number = frame.jumpForce;
+            //look for property value
+            if(moveSpeed != null)
+                this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
+            if(jumpForce != null)
+                this._celestial.Physics.addForceY(-jumpForce);
+        }
+
+
+        private _handleClimbs() {
+            let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
+            this._celestial.Physics.setGravity(0);
+            //get the climb properties
+            let moveSpeed:number = frame.moveSpeed || 10;
+            //set the property
+            this._celestial.Physics.addForceY(-moveSpeed);
+        }
+        private _completeClimbs() {
+            console.log("JUMP OFF WALL!");
+            console.log("LAST TOUCHED WALL: " + this._celestial.Physics.LastTouchedWall);
+            //jump off wall
+            switch(this._celestial.Physics.LastTouchedWall) {
+                case Physics.Wall.Left:
+                    this._celestial.Physics.addForceX(randomRange(35, 80));
+                    this._celestial.flipX();
+                    break;
+                case Physics.Wall.Right:
+                    this._celestial.Physics.addForceX(randomRange(-35, -80));
+                    this._celestial.flipX();
+            }
+        }
 
     }
     
