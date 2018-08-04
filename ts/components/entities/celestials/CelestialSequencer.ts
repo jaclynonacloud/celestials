@@ -7,9 +7,11 @@ namespace celestials.engines {
         idles?:ICelestialSequenceSet;
         walks?:ICelestialSequenceSet;
         climbs?:ICelestialSequenceSet;
+        hangs?:ICelestialSequenceSet;
     }
     export interface ICelestialSequenceSet {
         attentionSpan?:number;
+        transitionStates:string[]; //holds names to states that can be switched to next /*If none are supplied, the default states will be used.*/
         special?:boolean; //marks whether a sequence can be randomly selected, or must be called
         sequences:ICelestialSequence[];
     }
@@ -32,8 +34,10 @@ namespace celestials.engines {
         public static get State() { return Object.freeze({
             "Idle" : "idles",
             "Walk" : "walks",
-            "Climb" : "climbs"
+            "Climb" : "climbs",
+            "Hang" : "hangs"
         });}
+        public static get DEFAULT_TRANSITIONAL_STATES():string[] { return ["Idle", "Walk"]; }
 
         private _celestial:Celestial;
         
@@ -41,12 +45,14 @@ namespace celestials.engines {
         private _currentSequence:ICelestialSequence;
 
         private _currentState:string;
+        private _lastState:string;
 
         private _frameIndex:number; //holds the sequence frame index
         private _holdIndex:number; //holds the hold index of a frame
         private _totalIndex:number; //holds the runtime of the sequence
 
         private _sequenceCompleteListener:Function;
+        private _stateChangeListener:Function;
         private _stateCompleteListener:Function;
 
         constructor(celestial:Celestial) {
@@ -71,10 +77,19 @@ namespace celestials.engines {
             if(this._currentState != null)
                 this.completeState();
 
+            //check the state for sequences
+            if(this._sequences[state].sequences.length <= 0)
+                return null; //this state has no sequences
+
             this._currentState = state;
             //TODO decide a factor for switching sequences
             // let sequence:ICelestialSequence = this.getRandomStateSequence(this._currentState);
             // this.changeSequence(sequence);
+
+            if(this._stateChangeListener != null)
+                this._stateChangeListener();
+
+            this._lastState = this._currentState;
 
             return this._currentState;
         }
@@ -136,6 +151,13 @@ namespace celestials.engines {
             this._sequenceCompleteListener = null;
         }
 
+        public addStateChangeListener(listener:Function) {
+            this._stateChangeListener = listener;
+        }
+        public removeStateChangeListener() {
+            this._stateChangeListener = null;
+        }
+
         public addStateCompleteListener(listener:Function) {
             this._stateCompleteListener = listener;
         }
@@ -173,7 +195,7 @@ namespace celestials.engines {
                     }     
                     
                     //reset things
-                    this._celestial.Physics.resetGravity();
+                    // this._celestial.Physics.resetGravity();
                     //handle state differences
                     resolve();
 
@@ -201,8 +223,10 @@ namespace celestials.engines {
         private get Data():entities.ICelestial { return this._celestial.Data as entities.ICelestial; }
         public get Sequences():ICelestialSequences { return this._sequences; }
         public get CurrentState():string { return this._currentState; }
+        public get LastState():string { return this._lastState; }
         public get CurrentSequence():ICelestialSequence { return this._currentSequence; }
-        public get CurrentFrame():ICelestialFrame {return this._currentSequence.frames[this._frameIndex]; }
+        public get CurrentFrame():ICelestialFrame { return this._currentSequence.frames[this._frameIndex]; }
+        public get CurrentSequenceSet():ICelestialSequenceSet { return this._sequences[this._currentState]; }
     }
 
 }

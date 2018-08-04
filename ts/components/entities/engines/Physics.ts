@@ -10,8 +10,7 @@ namespace celestials.engines {
         public static get DEF_GRAVITY():number { return 10; }
         private _entity:entities.Entity;
         private _gravity:number;
-        private _velocityX:number;
-        private _velocityY:number;
+        private _velocity:IPoint;
         private _degradeVelocity:number;
 
         private _usesGravity:boolean;
@@ -24,8 +23,10 @@ namespace celestials.engines {
             this._entity = entity;
             this._gravity = Physics.DEF_GRAVITY;
             this._usesGravity = true;
-            this._velocityX = 0;
-            this._velocityY = 0;
+            this._velocity = {
+                x: 0,
+                y: 0
+            };
             this._degradeVelocity = 0.75;
 
             //read entity for gravity data
@@ -43,12 +44,15 @@ namespace celestials.engines {
 
         /*---------------------------------------------- METHODS -------------------------------------*/
         public addForceX(value:number) {
-            this._velocityX += value;
+            this._velocity.x += value;
         }
         public addForceY(value:number) {
-            this._velocityY += value;
-            console.log("VEL: " + value);
+            this._velocity.y += value;
             this.update();
+        }
+        public zeroVelocity() {
+            this._velocity.x = 0;
+            this._velocity.y = 0;
         }
         public setGravity(value:number) {
             this._gravity = value;
@@ -63,6 +67,9 @@ namespace celestials.engines {
         }
         public snapToRight() {
             this._entity.X = App.Bounds.Right - this._entity.Bounds.Width + this._entity.RegistrationOffset.x;
+        }
+        public snapToTop() {
+            this._entity.Y = App.Bounds.Top + (this._entity.Bounds.Height - this._entity.RegistrationOffset.y);
         }
 
         keepInBounds() {
@@ -94,10 +101,10 @@ namespace celestials.engines {
             let screenBounds:Rect = App.Bounds;
             let entityBounds:Rect = this._entity.Bounds;
 
-            if(entityBounds.Left <= screenBounds.Left) if(this._velocityX < 0) this._velocityX = 0;
-            if(entityBounds.Right >= screenBounds.Right) if(this._velocityX > 0) this._velocityX = 0;
-            if(entityBounds.Top <= screenBounds.Top) if(this._velocityY < 0) this._velocityY = 0;
-            if(entityBounds.Bottom >= screenBounds.Bottom) if(this._velocityY > 0) this._velocityY = 0;
+            if(entityBounds.Left <= screenBounds.Left) if(this._velocity.x < 0) this._velocity.x = 0;
+            if(entityBounds.Right >= screenBounds.Right) if(this._velocity.x > 0) this._velocity.x = 0;
+            if(entityBounds.Top <= screenBounds.Top) if(this._velocity.y < 0) this._velocity.y = 0;
+            if(entityBounds.Bottom >= screenBounds.Bottom) if(this._velocity.y > 0) this._velocity.y = 0;
         }
 
 
@@ -119,24 +126,25 @@ namespace celestials.engines {
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         async update() {
             //degrade velocity
-            this._velocityX *= this._degradeVelocity;
-            this._velocityY *= this._degradeVelocity;
+            this._velocity.x *= this._degradeVelocity;
+            this._velocity.y *= this._degradeVelocity;
 
             //add gravity to entity
             if(this._usesGravity) {
-                this._velocityY += this._gravity;
+                this._velocity.y += this._gravity;
             }
 
             await this.correctVelocity();
             //set the new position
-            this._entity.X += this._velocityX;
-            this._entity.Y += this._velocityY;
+            this._entity.X += this._velocity.x;
+            this._entity.Y += this._velocity.y;
 
             
             await this.keepInBounds();
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
+        public get Velocity():IPoint { return {x:this._velocity.x, y:this._velocity.y}; }
         public get LastTouchedWall():number { return this._touchedWall; }
 
 

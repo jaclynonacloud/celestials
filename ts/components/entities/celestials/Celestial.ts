@@ -24,6 +24,8 @@ namespace celestials.entities {
         private _scale:number;
         private _eventsRegistry:Dictionary<string, any>;
 
+        private _wallHitCooldown;
+
         constructor(node:HTMLElement, container:HTMLElement, json:ICelestial) {
             super(json.name, node, json as any);
             this._container = container;
@@ -33,12 +35,15 @@ namespace celestials.entities {
             console.log(this._node);
             this._mainImage = this._node.querySelector(".main-image");
 
+            this._wallHitCooldown = 0;
+
             //add name to node
             this._node.dataset.name = this.Name;
             console.log("Created: " + this.Name);
 
             this._eventsRegistry = new Dictionary();
             this._eventsRegistry.add("sequenceComplete", this._onSequenceComplete.bind(this));
+            this._eventsRegistry.add("stateChange", this._onStateChange.bind(this));
             this._eventsRegistry.add("stateComplete", this._onStateComplete.bind(this));
             this._eventsRegistry.add("wallHit", this._onWallHit.bind(this));
         }
@@ -54,13 +59,14 @@ namespace celestials.entities {
             if(src == this._mainImage.src) return new Promise(function(resolve, reject) { resolve(this._mainImage);})
 
             return new Promise((resolve, reject) => {
-                this._mainImage.onload = () => {
-                    console.log("CHANGING IMAGE");
+                const img = new Image();
+                img.onload = () => {
+                    this._mainImage.src = img.src;
                     //set the scale
-                    let width = this._mainImage.naturalWidth * this._scale;
-                    let height = this._mainImage.naturalHeight * this._scale;
-                    this._mainImage.style.width = `${width}px`;
-                    this._mainImage.style.height = `${height}px`;
+                    this._width = img.naturalWidth * this._scale;
+                    this._height = img.naturalHeight * this._scale;
+                    this._mainImage.style.width = `${this._width}px`;
+                    this._mainImage.style.height = `${this._height}px`;
 
                     //offset by registration point
                     let x = `-${this.RegistrationOffset.x}px`;
@@ -69,65 +75,25 @@ namespace celestials.entities {
                     this._mainImage.style.left = x;
                     this._mainImage.style.bottom = y;
 
+                    console.log("LOADED IMAGE");
+                    console.log("PROPER WIDTH: " + this._width);
+
                     resolve(this._mainImage);
                 }
-                this._mainImage.onerror = () => reject(new Error("Image could not be loaded!"));
+                img.onerror = () => reject(new Error("Image could not be loaded!"));
     
-                this._mainImage.src = src;
+                img.src = src;
             });
 
         }
 
         public drawCurrentFrame() {
+            //TODO remove; redundant line below -- it is covered in the main draw -- for testing only
+            if(this.getImage(this._sequencer.CurrentFrame.name) == this._mainImage.src) return new Promise(function(resolve, reject) { resolve(this._mainImage);})
+            console.log("Drawing current frame: " + this._sequencer.CurrentFrame.name);
             return this.draw(this.getImage(this._sequencer.CurrentFrame.name));
         }
         
-        // draw(src:string) {
-        //     if(src == null || src == "") return;
-        //     if(src == this._mainImage.src) return;
-
-        //     return new Promise(function(resolve, reject) {    
-        //         this._mainImage.onload = () => {
-        //             //set the scale
-        //             this._mainImage.style.width = `${this._mainImage.naturalWidth * this._scale}px`;
-        //             this._mainImage.style.height = `${this._mainImage.naturalHeight * this._scale}px`;
-
-        //             //offset by registration point
-        //             let x = `-${this.RegistrationOffset.x}px`;
-        //             let y = `-${this.RegistrationOffset.y}px`;
-        //             // this._mainImage.parentElement.style.transform = `translate(${x} ${y})`;
-        //             this._mainImage.style.left = `-${this.RegistrationOffset.x}px`;
-        //             this._mainImage.style.bottom = `-${this.RegistrationOffset.y}px`;
-        //             console.log("LOADED IMG");
-
-        //             resolve();
-        //         }
-        //         this._mainImage.onerror = () => reject();
-    
-        //         if(this._mainImage.src != src)
-        //             this._mainImage.src = src;
-        //     });
-
-        //     // let loadEvent = () => {
-        //     //     //set the scale
-        //     //     this._mainImage.style.width = `${this._mainImage.naturalWidth * this._scale}px`;
-        //     //     this._mainImage.style.height = `${this._mainImage.naturalHeight * this._scale}px`;
-
-        //     //     //offset by registration point
-        //     //     let x = `-${this.RegistrationOffset.x}px`;
-        //     //     let y = `-${this.RegistrationOffset.y}px`;
-        //     //     // this._mainImage.parentElement.style.transform = `translate(${x} ${y})`;
-        //     //     this._mainImage.style.left = `-${this.RegistrationOffset.x}px`;
-        //     //     this._mainImage.style.bottom = `-${this.RegistrationOffset.y}px`;
-        //     //     this._mainImage.removeEventListener("load", loadEvent);
-        //     //     console.log("LOADED IMG");
-        //     // }
-
-        //     // await this._mainImage.addEventListener("load", loadEvent);
-
-        //     // if(this._mainImage.src != src)
-        //     //     this._mainImage.src = src;
-        // }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         public clone():Celestial {
@@ -151,7 +117,8 @@ namespace celestials.entities {
                             //create logic
                             this._logic = new logic.CelestialLogic(this, this.Data.logic || null);
                             //set the scale
-                            this._scale = randomRange(data.scale.min, data.scale.max);
+                            // this._scale = randomRange(data.scale.min, data.scale.max);
+                            this._scale = 1;
                             
     
                             //iterate through each image
@@ -242,6 +209,7 @@ namespace celestials.entities {
             
                                     //wire listeners
                                     this._sequencer.addSequenceCompleteListener(this._eventsRegistry.getValue("sequenceComplete"));
+                                    this._sequencer.addStateChangeListener(this._eventsRegistry.getValue("stateChange"));
                                     this._sequencer.addStateCompleteListener(this._eventsRegistry.getValue("stateComplete"));
                                     this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
                                     //TODO I've setup the click event, don't readd unless removing this one
@@ -266,17 +234,32 @@ namespace celestials.entities {
 
             //remove listeners
             this._sequencer.removeSequenceCompleteListener();
+            this._sequencer.removeStateChangeListener();
             this._sequencer.removeStateCompleteListener();
             this._physics.removeWallHitListener();
         }
 
-        public update() {
+        public async update() {
             //update sequence
             // logic > sequencer > draw > physics
-            this._logic.update()
-                .then(() => this._sequencer.update())
-                    .then(() => this.draw(this.getImage(this._sequencer.CurrentFrame.name)))
-                        .then(img => this._physics.update());
+            await this._logic.update();
+            await this._sequencer.update();
+            await this.drawCurrentFrame();
+            await this._physics.update();
+
+
+            // this._logic.update()
+            //     .then(() => this._sequencer.update())
+            //         .then(() => this.draw(this.getImage(this._sequencer.CurrentFrame.name)))
+            //             .then(img => this._physics.update());
+
+            if(this._wallHitCooldown != 0)
+                this._wallHitCooldown--;
+        }
+
+
+        public startWallhitCooldown() {
+            this._wallHitCooldown = 25;
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         private _onSequenceComplete() {
@@ -286,11 +269,16 @@ namespace celestials.entities {
             this._logic.next();
         }
 
+        private _onStateChange() {
+            this.startWallhitCooldown();
+            this._logic.handleStateChange();
+        }
         private _onStateComplete() {
             this._logic.handleStateComplete();
         }
 
         private _onWallHit(which:number) {
+            if(this._wallHitCooldown != 0) return;
             console.log("Hit wall " + which);
             //tell logic
             this._logic.handleWallHit(which);

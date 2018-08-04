@@ -2,14 +2,8 @@
     "lookup" : "solaris",
     "name" : "Solaris",
     "path" : "./res/celestials/solaris/",
-    "position" : {
-        "x" : 200,
-        "y" : 200
-    },
-    "scale" : {
-        "min" : 0.5,
-        "max" : 1
-    },
+    "position" : { "x" : 200, "y" : 200 },
+    "scale" : { "min" : 0.5, "max" : 1 },
 
     "physics" : {
         "degradeVelocity" : 0.75
@@ -71,6 +65,25 @@
                     "h" : 128
                 }
             ]
+        },
+        {
+            "path" : "solaris_hang.png",
+            "frames" : [
+                {
+                    "name" : "hang0",
+                    "x" : 0,
+                    "y" : 0,
+                    "w" : 128,
+                    "h" : 80
+                },
+                {
+                    "name" : "hang1",
+                    "x" : 128,
+                    "y" : 0,
+                    "w" : 128,
+                    "h" : 80
+                }
+            ]
         }
     ],
 
@@ -84,6 +97,9 @@
         "updateRate" : 1,
         "idles" : {
             "attentionSpan" : 50,
+            "transitionStates" : [
+                "Walk"
+            ],
             "sequences" : [
             {
                 "name" : "shortIdle",
@@ -99,6 +115,9 @@
         ]},
         "walks" : {
             "attentionSpan" : 50,
+            "transitionStates" : [
+                "Idle"
+            ],
             "sequences" : [
             {
                 "name" : "shortWalk",
@@ -137,9 +156,25 @@
                 "looping" : true,
                 "frames" : [
                     {"name" : "climb0", "hold" : 30, "moveSpeed" : 1 },
-                    {"name" : "climb1", "hold" : 40, "moveSpeed" : 0.5 },
-                    {"name" : "climb0", "hold" : 40, "moveSpeed" : -0.5 },
+                    {"name" : "climb1", "hold" : 40, "moveSpeed" : 2 },
+                    {"name" : "climb0", "hold" : 40, "moveSpeed" : 2 },
                     {"name" : "climb1", "hold" : 15, "moveSpeed" : 2 }
+                ]
+            }
+        ]},
+        "hangs" : {
+            "attentionSpan" : 100,
+            "special" : true,
+            "sequences" : [
+            {
+                "name" : "shortHang",
+                "duration" : 200,
+                "looping" : true,
+                "frames" : [
+                    {"name" : "hang0", "hold" : 30, "moveSpeed" : 1 },
+                    {"name" : "hang1", "hold" : 40, "moveSpeed" : 0.5 },
+                    {"name" : "hang0", "hold" : 40, "moveSpeed" : -0.5 },
+                    {"name" : "hang1", "hold" : 15, "moveSpeed" : 2 }
                 ]
             }
         ]}

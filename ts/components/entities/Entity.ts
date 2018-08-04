@@ -24,6 +24,9 @@ namespace celestials.entities {
         protected _registrationPoint:IPoint;
         protected _direction:IPoint;
 
+        protected _width:number;
+        protected _height: number;
+
         protected _isLoaded:boolean;
 
         constructor(name:string, node:HTMLElement, data:IEntity=null) {
@@ -140,10 +143,10 @@ namespace celestials.entities {
         }
 
         public get Width():number {
-            return this._mainImage.getBoundingClientRect().width;
+            return this._width
         }
         public get Height():number {
-            return this._mainImage.getBoundingClientRect().height;
+            return this._height;
         }
 
         public get IsLoaded():boolean {

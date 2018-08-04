@@ -25,6 +25,9 @@ namespace celestials.systems {
             let upKey = [Key.Code["up arrow"]];
             InputManager.addBinding("debug__up", new KeyBinding(this._sendUp.bind(this), KeyBinding.State.Down, ...upKey));
 
+            let snapUpKey = [Key.Code.o];
+            InputManager.addBinding("debug__snapUp", new KeyBinding(this._snapToTop.bind(this), KeyBinding.State.Down, ...snapUpKey));
+
 
 
             let spawnCelestialKey = [Key.Code.z];
@@ -70,6 +73,11 @@ namespace celestials.systems {
         private _sendUp() {
             for(let cel of CelestialsManager.Celestials)
                 cel.Physics.addForceY(-200);
+        }
+
+        private _snapToTop() {
+            for(let cel of CelestialsManager.Celestials)
+                cel.Physics.snapToTop();
         }
 
         private _spawnCelestial() {

@@ -470,14 +470,14 @@ var celestials;
             });
             Object.defineProperty(Entity.prototype, "Width", {
                 get: function () {
-                    return this._mainImage.getBoundingClientRect().width;
+                    return this._width;
                 },
                 enumerable: true,
                 configurable: true
             });
             Object.defineProperty(Entity.prototype, "Height", {
                 get: function () {
-                    return this._mainImage.getBoundingClientRect().height;
+                    return this._height;
                 },
                 enumerable: true,
                 configurable: true
@@ -512,10 +512,12 @@ var celestials;
                 _this._container = container;
                 console.log(_this._node);
                 _this._mainImage = _this._node.querySelector(".main-image");
+                _this._wallHitCooldown = 0;
                 _this._node.dataset.name = _this.Name;
                 console.log("Created: " + _this.Name);
                 _this._eventsRegistry = new celestials.Dictionary();
                 _this._eventsRegistry.add("sequenceComplete", _this._onSequenceComplete.bind(_this));
+                _this._eventsRegistry.add("stateChange", _this._onStateChange.bind(_this));
                 _this._eventsRegistry.add("stateComplete", _this._onStateComplete.bind(_this));
                 _this._eventsRegistry.add("wallHit", _this._onWallHit.bind(_this));
                 return _this;
@@ -525,23 +527,29 @@ var celestials;
                 if (src == this._mainImage.src)
                     return new Promise(function (resolve, reject) { resolve(this._mainImage); });
                 return new Promise(function (resolve, reject) {
-                    _this._mainImage.onload = function () {
-                        console.log("CHANGING IMAGE");
-                        var width = _this._mainImage.naturalWidth * _this._scale;
-                        var height = _this._mainImage.naturalHeight * _this._scale;
-                        _this._mainImage.style.width = width + "px";
-                        _this._mainImage.style.height = height + "px";
+                    var img = new Image();
+                    img.onload = function () {
+                        _this._mainImage.src = img.src;
+                        _this._width = img.naturalWidth * _this._scale;
+                        _this._height = img.naturalHeight * _this._scale;
+                        _this._mainImage.style.width = _this._width + "px";
+                        _this._mainImage.style.height = _this._height + "px";
                         var x = "-" + _this.RegistrationOffset.x + "px";
                         var y = "-" + _this.RegistrationOffset.y + "px";
                         _this._mainImage.style.left = x;
                         _this._mainImage.style.bottom = y;
+                        console.log("LOADED IMAGE");
+                        console.log("PROPER WIDTH: " + _this._width);
                         resolve(_this._mainImage);
                     };
-                    _this._mainImage.onerror = function () { return reject(new Error("Image could not be loaded!")); };
-                    _this._mainImage.src = src;
+                    img.onerror = function () { return reject(new Error("Image could not be loaded!")); };
+                    img.src = src;
                 });
             };
             Celestial.prototype.drawCurrentFrame = function () {
+                if (this.getImage(this._sequencer.CurrentFrame.name) == this._mainImage.src)
+                    return new Promise(function (resolve, reject) { resolve(this._mainImage); });
+                console.log("Drawing current frame: " + this._sequencer.CurrentFrame.name);
                 return this.draw(this.getImage(this._sequencer.CurrentFrame.name));
             };
             Celestial.prototype.clone = function () {
@@ -559,7 +567,7 @@ var celestials;
                             _this._sequencer = new celestials.engines.CelestialSequencer(_this);
                             _this._physics = new celestials.engines.Physics(_this);
                             _this._logic = new celestials.logic.CelestialLogic(_this, _this.Data.logic || null);
-                            _this._scale = celestials.randomRange(data.scale.min, data.scale.max);
+                            _this._scale = 1;
                             var promises = new Array();
                             var _loop_1 = function (imgData) {
                                 promises.push(new Promise(function (res, rej) {
@@ -656,6 +664,7 @@ var celestials;
                                     _this._isLoaded = true;
                                 });
                                 _this._sequencer.addSequenceCompleteListener(_this._eventsRegistry.getValue("sequenceComplete"));
+                                _this._sequencer.addStateChangeListener(_this._eventsRegistry.getValue("stateChange"));
                                 _this._sequencer.addStateCompleteListener(_this._eventsRegistry.getValue("stateComplete"));
                                 _this._physics.addWallHitListener(_this._eventsRegistry.getValue("wallHit"));
                                 _this._node.addEventListener("click", function () { return console.log("I'VE CLICKED: " + _this.Name); });
@@ -669,24 +678,50 @@ var celestials;
             };
             Celestial.prototype.unload = function () {
                 this._sequencer.removeSequenceCompleteListener();
+                this._sequencer.removeStateChangeListener();
                 this._sequencer.removeStateCompleteListener();
                 this._physics.removeWallHitListener();
             };
             Celestial.prototype.update = function () {
-                var _this = this;
-                this._logic.update()
-                    .then(function () { return _this._sequencer.update(); })
-                    .then(function () { return _this.draw(_this.getImage(_this._sequencer.CurrentFrame.name)); })
-                    .then(function (img) { return _this._physics.update(); });
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0: return [4, this._logic.update()];
+                            case 1:
+                                _a.sent();
+                                return [4, this._sequencer.update()];
+                            case 2:
+                                _a.sent();
+                                return [4, this.drawCurrentFrame()];
+                            case 3:
+                                _a.sent();
+                                return [4, this._physics.update()];
+                            case 4:
+                                _a.sent();
+                                if (this._wallHitCooldown != 0)
+                                    this._wallHitCooldown--;
+                                return [2];
+                        }
+                    });
+                });
+            };
+            Celestial.prototype.startWallhitCooldown = function () {
+                this._wallHitCooldown = 25;
             };
             Celestial.prototype._onSequenceComplete = function () {
                 console.log("SEQUENCE COMPLETE");
                 this._logic.next();
             };
+            Celestial.prototype._onStateChange = function () {
+                this.startWallhitCooldown();
+                this._logic.handleStateChange();
+            };
             Celestial.prototype._onStateComplete = function () {
                 this._logic.handleStateComplete();
             };
             Celestial.prototype._onWallHit = function (which) {
+                if (this._wallHitCooldown != 0)
+                    return;
                 console.log("Hit wall " + which);
                 this._logic.handleWallHit(which);
             };
@@ -764,6 +799,14 @@ var celestials;
         return (b - a) * t + a;
     }
     celestials.lerp = lerp;
+    function shuffleArray(array) {
+        var _a;
+        for (var i = array.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            _a = __read([array[j], array[i]], 2), array[i] = _a[0], array[j] = _a[1];
+        }
+    }
+    celestials.shuffleArray = shuffleArray;
     var Dictionary = (function () {
         function Dictionary() {
             this._pairs = new Array();
@@ -1089,6 +1132,8 @@ var celestials;
                 InputManager.addBinding("debug__right", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, __spread([void 0, this._sendRight.bind(this), celestials.KeyBinding.State.Down], rightKey)))());
                 var upKey = [celestials.Key.Code["up arrow"]];
                 InputManager.addBinding("debug__up", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, __spread([void 0, this._sendUp.bind(this), celestials.KeyBinding.State.Down], upKey)))());
+                var snapUpKey = [celestials.Key.Code.o];
+                InputManager.addBinding("debug__snapUp", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, __spread([void 0, this._snapToTop.bind(this), celestials.KeyBinding.State.Down], snapUpKey)))());
                 var spawnCelestialKey = [celestials.Key.Code.z];
                 InputManager.addBinding("debug__spawnCelestial", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, __spread([void 0, this._spawnCelestial.bind(this), celestials.KeyBinding.State.Down], spawnCelestialKey)))());
                 var flipCelestialXKey = [celestials.Key.Code.x];
@@ -1158,15 +1203,12 @@ var celestials;
                     finally { if (e_10) throw e_10.error; }
                 }
             };
-            Debugger.prototype._spawnCelestial = function () {
-                CelestialsManager.addCelestial("solaris");
-            };
-            Debugger.prototype._flipCelestialX = function () {
+            Debugger.prototype._snapToTop = function () {
                 var e_11, _a;
                 try {
                     for (var _b = __values(CelestialsManager.Celestials), _c = _b.next(); !_c.done; _c = _b.next()) {
-                        var celestial = _c.value;
-                        celestial.flipX();
+                        var cel = _c.value;
+                        cel.Physics.snapToTop();
                     }
                 }
                 catch (e_11_1) { e_11 = { error: e_11_1 }; }
@@ -1177,12 +1219,15 @@ var celestials;
                     finally { if (e_11) throw e_11.error; }
                 }
             };
-            Debugger.prototype._switchState = function () {
+            Debugger.prototype._spawnCelestial = function () {
+                CelestialsManager.addCelestial("solaris");
+            };
+            Debugger.prototype._flipCelestialX = function () {
                 var e_12, _a;
                 try {
                     for (var _b = __values(CelestialsManager.Celestials), _c = _b.next(); !_c.done; _c = _b.next()) {
                         var celestial = _c.value;
-                        celestial.Sequencer.changeState(celestials.engines.CelestialSequencer.State.Walk);
+                        celestial.flipX();
                     }
                 }
                 catch (e_12_1) { e_12 = { error: e_12_1 }; }
@@ -1191,6 +1236,22 @@ var celestials;
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
                     finally { if (e_12) throw e_12.error; }
+                }
+            };
+            Debugger.prototype._switchState = function () {
+                var e_13, _a;
+                try {
+                    for (var _b = __values(CelestialsManager.Celestials), _c = _b.next(); !_c.done; _c = _b.next()) {
+                        var celestial = _c.value;
+                        celestial.Sequencer.changeState(celestials.engines.CelestialSequencer.State.Walk);
+                    }
+                }
+                catch (e_13_1) { e_13 = { error: e_13_1 }; }
+                finally {
+                    try {
+                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                    }
+                    finally { if (e_13) throw e_13.error; }
                 }
             };
             Debugger.prototype._togglePause = function () {
@@ -1285,8 +1346,10 @@ var celestials;
                 this._entity = entity;
                 this._gravity = Physics.DEF_GRAVITY;
                 this._usesGravity = true;
-                this._velocityX = 0;
-                this._velocityY = 0;
+                this._velocity = {
+                    x: 0,
+                    y: 0
+                };
                 this._degradeVelocity = 0.75;
                 if (this._entity.Data.physics != null) {
                     var data = this._entity.Data.physics;
@@ -1310,12 +1373,15 @@ var celestials;
                 configurable: true
             });
             Physics.prototype.addForceX = function (value) {
-                this._velocityX += value;
+                this._velocity.x += value;
             };
             Physics.prototype.addForceY = function (value) {
-                this._velocityY += value;
-                console.log("VEL: " + value);
+                this._velocity.y += value;
                 this.update();
+            };
+            Physics.prototype.zeroVelocity = function () {
+                this._velocity.x = 0;
+                this._velocity.y = 0;
             };
             Physics.prototype.setGravity = function (value) {
                 this._gravity = value;
@@ -1328,6 +1394,9 @@ var celestials;
             };
             Physics.prototype.snapToRight = function () {
                 this._entity.X = celestials.App.Bounds.Right - this._entity.Bounds.Width + this._entity.RegistrationOffset.x;
+            };
+            Physics.prototype.snapToTop = function () {
+                this._entity.Y = celestials.App.Bounds.Top + (this._entity.Bounds.Height - this._entity.RegistrationOffset.y);
             };
             Physics.prototype.keepInBounds = function () {
                 var screenBounds = celestials.App.Bounds;
@@ -1354,17 +1423,17 @@ var celestials;
                 var screenBounds = celestials.App.Bounds;
                 var entityBounds = this._entity.Bounds;
                 if (entityBounds.Left <= screenBounds.Left)
-                    if (this._velocityX < 0)
-                        this._velocityX = 0;
+                    if (this._velocity.x < 0)
+                        this._velocity.x = 0;
                 if (entityBounds.Right >= screenBounds.Right)
-                    if (this._velocityX > 0)
-                        this._velocityX = 0;
+                    if (this._velocity.x > 0)
+                        this._velocity.x = 0;
                 if (entityBounds.Top <= screenBounds.Top)
-                    if (this._velocityY < 0)
-                        this._velocityY = 0;
+                    if (this._velocity.y < 0)
+                        this._velocity.y = 0;
                 if (entityBounds.Bottom >= screenBounds.Bottom)
-                    if (this._velocityY > 0)
-                        this._velocityY = 0;
+                    if (this._velocity.y > 0)
+                        this._velocity.y = 0;
             };
             Physics.prototype.addWallHitListener = function (listener) {
                 this._onWallHitListener = listener;
@@ -1382,16 +1451,16 @@ var celestials;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                this._velocityX *= this._degradeVelocity;
-                                this._velocityY *= this._degradeVelocity;
+                                this._velocity.x *= this._degradeVelocity;
+                                this._velocity.y *= this._degradeVelocity;
                                 if (this._usesGravity) {
-                                    this._velocityY += this._gravity;
+                                    this._velocity.y += this._gravity;
                                 }
                                 return [4, this.correctVelocity()];
                             case 1:
                                 _a.sent();
-                                this._entity.X += this._velocityX;
-                                this._entity.Y += this._velocityY;
+                                this._entity.X += this._velocity.x;
+                                this._entity.Y += this._velocity.y;
                                 return [4, this.keepInBounds()];
                             case 2:
                                 _a.sent();
@@ -1400,6 +1469,11 @@ var celestials;
                     });
                 });
             };
+            Object.defineProperty(Physics.prototype, "Velocity", {
+                get: function () { return { x: this._velocity.x, y: this._velocity.y }; },
+                enumerable: true,
+                configurable: true
+            });
             Object.defineProperty(Physics.prototype, "LastTouchedWall", {
                 get: function () { return this._touchedWall; },
                 enumerable: true,
@@ -1423,6 +1497,7 @@ var celestials;
                 this._attentionSpan = 50;
                 this._tick = 0;
                 this._updateTick = 0;
+                this._drawingFrame = false;
                 if (data != null) {
                     if (data.updateRate != null)
                         this._updateRate = celestials.clamp(data.updateRate, 1, 1000);
@@ -1439,9 +1514,7 @@ var celestials;
                 console.log("TICK:" + this._tick + ", ATTENTION:" + attention + ", SPAN:" + attentionSpan);
                 if (attention > attentionSpan) {
                     console.log("CHANGE STATE!");
-                    var state = this._celestial.Sequencer.changeState(this._celestial.Sequencer.getRandomState());
-                    var sequence = this._celestial.Sequencer.getRandomStateSequence(state);
-                    this._celestial.Sequencer.changeSequence(sequence);
+                    this.nextState();
                     this._tick = 0;
                 }
                 else {
@@ -1449,16 +1522,27 @@ var celestials;
                     var sequence = this._celestial.Sequencer.getRandomStateSequence(this._celestial.Sequencer.CurrentState);
                     this._celestial.Sequencer.changeSequence(sequence);
                 }
-                var random = celestials.randomRange(0, 1);
-                if (this._celestial.Sequencer.CurrentState != celestials.engines.CelestialSequencer.State.Climb) {
-                    console.log("I wanna flip!");
-                    var wantToFlipX = celestials.lerp((this._eagerness * 5), 100, random);
-                    if (wantToFlipX > this._attentionSpan)
-                        this._celestial.flipX();
+            };
+            CelestialLogic.prototype.nextState = function (state) {
+                if (state == null) {
+                    state = this._celestial.Sequencer.CurrentState;
+                    var nextStates = this._celestial.Sequencer.CurrentSequenceSet.transitionStates || celestials.engines.CelestialSequencer.DEFAULT_TRANSITIONAL_STATES;
+                    celestials.shuffleArray(nextStates);
+                    console.log("NEXT STATES");
+                    console.log(nextStates);
+                    var waitingForState = true;
+                    while (waitingForState) {
+                        for (var i = 0; i < nextStates.length; i++) {
+                            var stateName = celestials.engines.CelestialSequencer.State[nextStates[i]];
+                            if (this._celestial.Sequencer.changeState(stateName) != null)
+                                waitingForState = false;
+                        }
+                        throw new Error("The state: " + state + " does not have a transition state available.  Celestial " + this._celestial.Name + "is trapped!");
+                    }
+                    console.log("Switched TO: " + this._celestial.Sequencer.CurrentState);
                 }
             };
             CelestialLogic.prototype.handleWallHit = function (which) {
-                var _this = this;
                 if (which == Physics.Wall.Left || which == Physics.Wall.Right) {
                     if (celestials.randomRange(0, 1) > 0) {
                         var state = this._celestial.Sequencer.changeState(celestials.engines.CelestialSequencer.State.Climb);
@@ -1467,50 +1551,114 @@ var celestials;
                         var sequence = this._celestial.Sequencer.getRandomStateSequence(state);
                         if (sequence != null) {
                             this._celestial.Sequencer.changeSequence(sequence);
-                            this._celestial.drawCurrentFrame()
-                                .then(function () {
-                                console.log("6-Handle Wall");
-                                _this.reset();
-                                switch (which) {
-                                    case Physics.Wall.Left:
-                                        _this._celestial.Physics.snapToLeft();
-                                        _this._celestial.setDirectionX(1);
-                                        break;
-                                    case Physics.Wall.Right:
-                                        _this._celestial.Physics.snapToRight();
-                                        _this._celestial.setDirectionX(-1);
-                                }
-                            });
                         }
                     }
+                }
+                else if (which == Physics.Wall.Top) {
+                    if (celestials.randomRange(0, 1) > 0) {
+                        var state = this._celestial.Sequencer.changeState(celestials.engines.CelestialSequencer.State.Hang);
+                        if (state != celestials.engines.CelestialSequencer.State.Hang)
+                            return;
+                        var sequence = this._celestial.Sequencer.getRandomStateSequence(state);
+                        if (sequence != null) {
+                            this._celestial.Sequencer.changeSequence(sequence);
+                        }
+                    }
+                }
+            };
+            CelestialLogic.prototype.handleStateChange = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    var cs, lastState, currentState;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                console.log("----------CALLLED----------");
+                                console.log("STATE: -------- " + this._celestial.Sequencer.CurrentState);
+                                cs = celestials.engines.CelestialSequencer;
+                                lastState = this._celestial.Sequencer.LastState;
+                                currentState = this._celestial.Sequencer.CurrentState;
+                                return [4, this._celestial.update()];
+                            case 1:
+                                _a.sent();
+                                console.log("DREW: " + this._celestial.Sequencer.CurrentFrame.name);
+                                this.reset();
+                                console.log(this._celestial.Width);
+                                this._handleStateChange();
+                                this._handleStateNuance();
+                                return [2];
+                        }
+                    });
+                });
+            };
+            CelestialLogic.prototype._handleStateChange = function () {
+                console.log("Setup the Current State details");
+                var cs = celestials.engines.CelestialSequencer;
+                var lastState = this._celestial.Sequencer.LastState;
+                var currentState = this._celestial.Sequencer.CurrentState;
+                this._celestial.Physics.zeroVelocity();
+                if (currentState == cs.State.Climb) {
+                    switch (this._celestial.Physics.LastTouchedWall) {
+                        case Physics.Wall.Left:
+                            this._celestial.Physics.snapToLeft();
+                            this._celestial.setDirectionX(1);
+                            break;
+                        case Physics.Wall.Right:
+                            this._celestial.Physics.snapToRight();
+                            this._celestial.setDirectionX(-1);
+                    }
+                }
+                if (currentState == cs.State.Hang)
+                    this._celestial.Physics.snapToTop();
+            };
+            CelestialLogic.prototype._handleStateNuance = function () {
+                console.log("Setup the current state nuance");
+                var cs = celestials.engines.CelestialSequencer;
+                var lastState = this._celestial.Sequencer.LastState;
+                var currentState = this._celestial.Sequencer.CurrentState;
+                if (lastState == cs.State.Climb && currentState == cs.State.Hang) {
+                    this._celestial.Physics.addForceX(celestials.randomRange(20, 30) * this._celestial.Direction.x);
+                    this._celestial.Physics.snapToTop();
                 }
             };
             CelestialLogic.prototype.handleStateComplete = function () {
                 var state = this._celestial.Sequencer.CurrentState;
                 var funcName = "_complete" + state[0].toUpperCase() + state.substr(1);
-                if (this[funcName] != null)
+                if (this[funcName] != null) {
+                    this._celestial.Physics.resetGravity();
                     this[funcName]();
+                }
             };
             CelestialLogic.prototype.reset = function () {
                 this._tick = 0;
             };
             CelestialLogic.prototype.load = function () {
-                var _this = this;
-                return new Promise(function (resolve, reject) {
-                    try {
-                        var state = _this._celestial.Sequencer.changeState(_this._celestial.Sequencer.getRandomState());
-                        var sequence = _this._celestial.Sequencer.getRandomStateSequence(state);
-                        _this._celestial.Sequencer.changeSequence(sequence);
-                        var frameName = _this._celestial.Sequencer.CurrentFrame.name;
-                        _this._celestial.draw(_this._celestial.getImage(frameName))
-                            .then(function (img) {
-                            resolve();
-                            console.log("LOADED FIRST LOGIC");
-                        });
-                    }
-                    catch (e) {
-                        reject(new Error("Could not load Logic on " + _this._celestial.Name + "\n" + e));
-                    }
+                return __awaiter(this, void 0, void 0, function () {
+                    var _this = this;
+                    return __generator(this, function (_a) {
+                        return [2, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                                var state, sequence, e_14;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            _a.trys.push([0, 2, , 3]);
+                                            state = this._celestial.Sequencer.changeState(this._celestial.Sequencer.getRandomState());
+                                            sequence = this._celestial.Sequencer.getRandomStateSequence(state);
+                                            this._celestial.Sequencer.changeSequence(sequence);
+                                            return [4, this._celestial.drawCurrentFrame()];
+                                        case 1:
+                                            _a.sent();
+                                            console.log("LOADED FIRST LOGIC");
+                                            resolve();
+                                            return [3, 3];
+                                        case 2:
+                                            e_14 = _a.sent();
+                                            reject(new Error("Could not load Logic on " + this._celestial.Name + "\n" + e_14));
+                                            return [3, 3];
+                                        case 3: return [2];
+                                    }
+                                });
+                            }); })];
+                    });
                 });
             };
             CelestialLogic.prototype.unload = function () {
@@ -1530,12 +1678,10 @@ var celestials;
             };
             CelestialLogic.prototype._handleWalks = function () {
                 var frame = this._celestial.Sequencer.CurrentFrame;
-                var moveSpeed = frame.moveSpeed;
-                var jumpForce = frame.jumpForce;
-                if (moveSpeed != null)
-                    this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
-                if (jumpForce != null)
-                    this._celestial.Physics.addForceY(-jumpForce);
+                var moveSpeed = frame.moveSpeed || 0;
+                var jumpForce = frame.jumpForce || 0;
+                this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
+                this._celestial.Physics.addForceY(-jumpForce);
             };
             CelestialLogic.prototype._handleClimbs = function () {
                 var frame = this._celestial.Sequencer.CurrentFrame;
@@ -1544,17 +1690,12 @@ var celestials;
                 this._celestial.Physics.addForceY(-moveSpeed);
             };
             CelestialLogic.prototype._completeClimbs = function () {
-                console.log("JUMP OFF WALL!");
-                console.log("LAST TOUCHED WALL: " + this._celestial.Physics.LastTouchedWall);
-                switch (this._celestial.Physics.LastTouchedWall) {
-                    case Physics.Wall.Left:
-                        this._celestial.Physics.addForceX(celestials.randomRange(35, 80));
-                        this._celestial.flipX();
-                        break;
-                    case Physics.Wall.Right:
-                        this._celestial.Physics.addForceX(celestials.randomRange(-35, -80));
-                        this._celestial.flipX();
-                }
+            };
+            CelestialLogic.prototype._handleHangs = function () {
+                var frame = this._celestial.Sequencer.CurrentFrame;
+                this._celestial.Physics.setGravity(0);
+                var moveSpeed = frame.moveSpeed || 2;
+                this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
             };
             return CelestialLogic;
         }());
@@ -1578,9 +1719,15 @@ var celestials;
                     return Object.freeze({
                         "Idle": "idles",
                         "Walk": "walks",
-                        "Climb": "climbs"
+                        "Climb": "climbs",
+                        "Hang": "hangs"
                     });
                 },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(CelestialSequencer, "DEFAULT_TRANSITIONAL_STATES", {
+                get: function () { return ["Idle", "Walk"]; },
                 enumerable: true,
                 configurable: true
             });
@@ -1593,7 +1740,12 @@ var celestials;
                 if (state === void 0) { state = CelestialSequencer.State.Idle; }
                 if (this._currentState != null)
                     this.completeState();
+                if (this._sequences[state].sequences.length <= 0)
+                    return null;
                 this._currentState = state;
+                if (this._stateChangeListener != null)
+                    this._stateChangeListener();
+                this._lastState = this._currentState;
                 return this._currentState;
             };
             CelestialSequencer.prototype.getRandomState = function (omitCurrentState) {
@@ -1634,6 +1786,12 @@ var celestials;
             CelestialSequencer.prototype.removeSequenceCompleteListener = function () {
                 this._sequenceCompleteListener = null;
             };
+            CelestialSequencer.prototype.addStateChangeListener = function (listener) {
+                this._stateChangeListener = listener;
+            };
+            CelestialSequencer.prototype.removeStateChangeListener = function () {
+                this._stateChangeListener = null;
+            };
             CelestialSequencer.prototype.addStateCompleteListener = function (listener) {
                 this._stateCompleteListener = listener;
             };
@@ -1660,7 +1818,6 @@ var celestials;
                         if (_this._totalIndex > _this._currentSequence.duration * _this._sequences.updateRate) {
                             _this.completeSequence();
                         }
-                        _this._celestial.Physics.resetGravity();
                         resolve();
                     }
                     catch (e) {
@@ -1683,6 +1840,11 @@ var celestials;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(CelestialSequencer.prototype, "LastState", {
+                get: function () { return this._lastState; },
+                enumerable: true,
+                configurable: true
+            });
             Object.defineProperty(CelestialSequencer.prototype, "CurrentSequence", {
                 get: function () { return this._currentSequence; },
                 enumerable: true,
@@ -1690,6 +1852,11 @@ var celestials;
             });
             Object.defineProperty(CelestialSequencer.prototype, "CurrentFrame", {
                 get: function () { return this._currentSequence.frames[this._frameIndex]; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(CelestialSequencer.prototype, "CurrentSequenceSet", {
+                get: function () { return this._sequences[this._currentState]; },
                 enumerable: true,
                 configurable: true
             });

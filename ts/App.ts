@@ -38,8 +38,6 @@ namespace celestials {
             // console.log("FILES");
             // console.log(this.read('./'));
 
-            // return;
-
             
             //create update loop
             setInterval(() => {
