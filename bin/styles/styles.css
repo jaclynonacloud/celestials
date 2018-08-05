@@ -1,6 +1,23 @@
+@font-face {
+    font-family: nunito-sans;
+    src: url('../fonts/Nunito_Sans/NunitoSans-Regular.ttf');
+}
+
+
 html, body {
     background: rgba(0, 0, 0, 0);
+    font-family: nunito-sans, sans-serif;
 }
+
+
+.hide {
+    display: none !important;
+}
+
+
+
+
+
 
 .screen {
     position: absolute;
@@ -10,19 +27,19 @@ html, body {
     bottom: 0;
 }
 
-.celestial {
+.celestials .celestial {
     display: flex;
     cursor: pointer;
     pointer-events: all;
 }
-.celestial .graphics {
+.celestials .celestial .graphics {
     position: relative;
 }
-.celestial .main-image {
+.celestials .celestial .main-image {
     position: absolute;
     bottom: 0;
 }
-.celestial .coord {
+.celestials .celestial .coord {
     position: absolute;
     bottom: 0;
     background: blue;
@@ -30,12 +47,37 @@ html, body {
     height: 2px;
 }
 
+
+
+
+
+
+
+/* Menus */
+.overlay-menu {
+    position: absolute;
+    display: flex;
+    flex-flow: column;
+    background: #f4f5f4;
+    max-width: max-content;
+    padding: 3px 5px;
+    font-size: 0.7em;
+    border-radius: 5px 0;
+    overflow: hidden;
+}
+.overlay-menu.celestial .name {
+    background: #d8dbd8;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: -3px -5px 5px -5px;
+    padding: 3px 5px;
+}
+
+
+
 .context-menu.celestial {
     background: red;
     min-width: 250px;
     min-height: 250px;
     max-width: max-content;
 }
-
-
-

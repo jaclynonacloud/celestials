@@ -8,6 +8,12 @@
     "physics" : {
         "degradeVelocity" : 0.75
     },
+    
+    "logic" :  {
+        "updateRate" : 50,
+        "eagerness" : 5,
+        "attentionSpan" : 60
+    },
 
     "images" : [
         {
@@ -87,11 +93,6 @@
         }
     ],
 
-    "logic" :  {
-        "updateRate" : 50,
-        "eagerness" : 5,
-        "attentionSpan" : 60
-    },
 
     "sequences" : {
         "updateRate" : 1,
@@ -125,8 +126,8 @@
                 "looping" : true,
                 "frames" : [
                     {"name" : "idle0", "hold" : 30, "moveSpeed" : 0.3 },
-                    {"name" : "idle1", "hold" : 1, "moveSpeed" : 2, "jumpForce" : 50},
-                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2},
+                    {"name" : "idle1", "hold" : 1, "moveSpeed" : 2, "jumpForce" : 50 },
+                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2 },
                     {"name" : "idle2", "hold" : 40, "moveSpeed" : 2 },
                     {"name" : "idle3", "hold" : 15, "moveSpeed" : 1 }
                 ]
@@ -137,8 +138,8 @@
                 "looping" : true,
                 "frames" : [
                     {"name" : "idle0", "hold" : 30, "moveSpeed" : 0.3 },
-                    {"name" : "idle1", "hold" : 1, "moveSpeed" : 2, "jumpForce" : 50},
-                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2},
+                    {"name" : "idle1", "hold" : 1, "moveSpeed" : 2, "jumpForce" : 50 },
+                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2 },
                     {"name" : "idle2", "hold" : 1, "moveSpeed" : 2, "jumpForce" : 80 },
                     {"name" : "idle2", "hold" : 40, "moveSpeed" : 2 },
                     {"name" : "idle3", "hold" : 1, "moveSpeed" : 1, "jumpForce" : 45 },
@@ -147,7 +148,7 @@
             }
         ]},
         "climbs" : {
-            "attentionSpan" : 100,
+            "attentionSpan" : 50,
             "special" : true,
             "sequences" : [
             {
@@ -163,7 +164,7 @@
             }
         ]},
         "hangs" : {
-            "attentionSpan" : 100,
+            "attentionSpan" : 20,
             "special" : true,
             "sequences" : [
             {
@@ -175,6 +176,39 @@
                     {"name" : "hang1", "hold" : 40, "moveSpeed" : 0.5 },
                     {"name" : "hang0", "hold" : 40, "moveSpeed" : -0.5 },
                     {"name" : "hang1", "hold" : 15, "moveSpeed" : 2 }
+                ]
+            }
+        ]},
+        "falls" : {
+            "attentionSpan" : 50,
+            "special" : true,
+            "sequences" : [
+            {
+                "name" : "shortFall",
+                "looping" : true,
+                "duration" : 9999,
+                "frames" : [
+                    {"name" : "idle0", "hold" : 3 },
+                    {"name" : "idle1", "hold" : 3 },
+                    {"name" : "idle2", "hold" : 9999 }
+                ]
+            }
+        ]},
+        "recovers" : {
+            "attentionSpan" : 100,
+            "special" : true,
+            "runOnce" : true,
+            "transitionStates" : [
+                "Idle",
+                "Walk"
+            ],
+            "sequences" : [
+            {
+                "name" : "shortRecover",
+                "frames" : [
+                    {"name" : "idle0", "hold" : 3 },
+                    {"name" : "idle1", "hold" : 3 },
+                    {"name" : "idle2", "hold" : 25 }
                 ]
             }
         ]}

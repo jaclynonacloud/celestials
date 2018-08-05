@@ -8,11 +8,14 @@ namespace celestials.engines {
         walks?:ICelestialSequenceSet;
         climbs?:ICelestialSequenceSet;
         hangs?:ICelestialSequenceSet;
+        falls?:ICelestialSequenceSet;
+        recovers?:ICelestialSequenceSet;
     }
     export interface ICelestialSequenceSet {
         attentionSpan?:number;
         transitionStates:string[]; //holds names to states that can be switched to next /*If none are supplied, the default states will be used.*/
         special?:boolean; //marks whether a sequence can be randomly selected, or must be called
+        runOnce?:boolean; //marks whether a sequence only runs through its frames once /*Overrides any separate sequence controllers like looping or duration.*/
         sequences:ICelestialSequence[];
     }
     export interface ICelestialSequence {
@@ -35,7 +38,9 @@ namespace celestials.engines {
             "Idle" : "idles",
             "Walk" : "walks",
             "Climb" : "climbs",
-            "Hang" : "hangs"
+            "Hang" : "hangs",
+            "Fall" : "falls",
+            "Recover" : "recovers"
         });}
         public static get DEFAULT_TRANSITIONAL_STATES():string[] { return ["Idle", "Walk"]; }
 
@@ -124,7 +129,6 @@ namespace celestials.engines {
 
         /**Changes to the given sequence. */
         public changeSequence(sequence:ICelestialSequence) {
-            // if(this._currentSequence != null) this.reset();
             this.reset();
             this._currentSequence = sequence;
             console.log("CHANGED SEQUENCE: " + this._currentSequence.name);
@@ -140,6 +144,14 @@ namespace celestials.engines {
             console.log("COMPLETED STATE: " + this._currentState);
             if(this._stateCompleteListener != null)
                 this._stateCompleteListener();
+        }
+
+
+        public isCurrentState(...states:string[]) {
+            for(let state of states)
+                if(this._currentState == state)
+                    return true;
+            return false;
         }
         
         /*-------------- WIRES ------------*/
@@ -183,7 +195,7 @@ namespace celestials.engines {
                     }
                     //see if this is a looping sequence
                     if(this._frameIndex > this._currentSequence.frames.length-1) {
-                        if(this._currentSequence.looping) //just reset the index
+                        if(this._currentSequence.looping && !this.CurrentSequenceSet.runOnce) //just reset the index
                             this._frameIndex = 0;
                         else //end the sequence
                             this.completeSequence();
@@ -213,7 +225,7 @@ namespace celestials.engines {
                     // resolve();
                 }
                 catch(e) {
-                    reject();
+                    reject(console.log("PROBLEM WITH SEQUENCER ON " + this._celestial.Name + "\n" + e));
                 }
             });
 

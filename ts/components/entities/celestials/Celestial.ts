@@ -1,4 +1,5 @@
 ///<reference path="./../Entity.ts" />
+///<reference path="./../../ui/CelestialOverlay.ts" />
 namespace celestials.entities {
 
     export interface ICelestial extends IEntity {
@@ -24,7 +25,8 @@ namespace celestials.entities {
         private _scale:number;
         private _eventsRegistry:Dictionary<string, any>;
 
-        private _wallHitCooldown;
+        //debug
+        private _overlayMenu:ui.CelestialOverlay;
 
         constructor(node:HTMLElement, container:HTMLElement, json:ICelestial) {
             super(json.name, node, json as any);
@@ -34,8 +36,6 @@ namespace celestials.entities {
             // this._mainImage.classList.add("mainImage");
             console.log(this._node);
             this._mainImage = this._node.querySelector(".main-image");
-
-            this._wallHitCooldown = 0;
 
             //add name to node
             this._node.dataset.name = this.Name;
@@ -75,9 +75,6 @@ namespace celestials.entities {
                     this._mainImage.style.left = x;
                     this._mainImage.style.bottom = y;
 
-                    console.log("LOADED IMAGE");
-                    console.log("PROPER WIDTH: " + this._width);
-
                     resolve(this._mainImage);
                 }
                 img.onerror = () => reject(new Error("Image could not be loaded!"));
@@ -90,7 +87,6 @@ namespace celestials.entities {
         public drawCurrentFrame() {
             //TODO remove; redundant line below -- it is covered in the main draw -- for testing only
             if(this.getImage(this._sequencer.CurrentFrame.name) == this._mainImage.src) return new Promise(function(resolve, reject) { resolve(this._mainImage);})
-            console.log("Drawing current frame: " + this._sequencer.CurrentFrame.name);
             return this.draw(this.getImage(this._sequencer.CurrentFrame.name));
         }
         
@@ -117,8 +113,8 @@ namespace celestials.entities {
                             //create logic
                             this._logic = new logic.CelestialLogic(this, this.Data.logic || null);
                             //set the scale
-                            // this._scale = randomRange(data.scale.min, data.scale.max);
-                            this._scale = 1;
+                            this._scale = randomRange(data.scale.min, data.scale.max);
+                            // this._scale = 1;
                             
     
                             //iterate through each image
@@ -202,6 +198,11 @@ namespace celestials.entities {
                                     //load the first logic
                                     this._logic.load()
                                         .then(() => {
+
+                                            //DEBUG: Created a ui menu item to show current controls
+                                            this._overlayMenu = new ui.CelestialOverlay(this._node);
+                                            this._node.parentNode.appendChild(this._overlayMenu.Node);
+
                                             resolve();
                                             this._isLoaded = true;
                                         });
@@ -243,23 +244,24 @@ namespace celestials.entities {
             //update sequence
             // logic > sequencer > draw > physics
             await this._logic.update();
+            // console.log("LOGIC");
             await this._sequencer.update();
+            // console.log("SEQUENCER");
             await this.drawCurrentFrame();
+            // console.log("DRAW");
             await this._physics.update();
+            // console.log("PHYSICS");
+
+
+            this._overlayMenu.update();
+            this._overlayMenu.changeName(this.Name);
+            this._overlayMenu.changeSequence(this._sequencer.CurrentSequence.name);
 
 
             // this._logic.update()
             //     .then(() => this._sequencer.update())
             //         .then(() => this.draw(this.getImage(this._sequencer.CurrentFrame.name)))
             //             .then(img => this._physics.update());
-
-            if(this._wallHitCooldown != 0)
-                this._wallHitCooldown--;
-        }
-
-
-        public startWallhitCooldown() {
-            this._wallHitCooldown = 25;
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         private _onSequenceComplete() {
@@ -270,7 +272,7 @@ namespace celestials.entities {
         }
 
         private _onStateChange() {
-            this.startWallhitCooldown();
+            // this.startWallhitCooldown();
             this._logic.handleStateChange();
         }
         private _onStateComplete() {
@@ -278,7 +280,6 @@ namespace celestials.entities {
         }
 
         private _onWallHit(which:number) {
-            if(this._wallHitCooldown != 0) return;
             console.log("Hit wall " + which);
             //tell logic
             this._logic.handleWallHit(which);
