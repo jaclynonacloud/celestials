@@ -515,6 +515,9 @@ var celestials;
             Menu.prototype.hide = function () {
                 this._node.classList.add("hide");
             };
+            Menu.prototype.remove = function () {
+                this._node.remove();
+            };
             Object.defineProperty(Menu.prototype, "Node", {
                 get: function () { return this._node; },
                 enumerable: true,
@@ -531,30 +534,38 @@ var celestials;
     (function (ui) {
         var OverlayMenu = (function (_super) {
             __extends(OverlayMenu, _super);
-            function OverlayMenu(node, target) {
+            function OverlayMenu(node, targetBounds) {
                 var _this = _super.call(this, node) || this;
                 _this._position = {
                     x: 0,
                     y: 0
                 };
-                _this._target = target;
+                _this._targetBounds = targetBounds;
+                _this.show();
                 return _this;
             }
+            OverlayMenu.prototype.changeTargetBounds = function (bounds) {
+                this._targetBounds = bounds;
+            };
             OverlayMenu.prototype._keepInBounds = function () {
                 var screenBounds = celestials.App.Bounds;
                 var menuBounds = this.Bounds;
                 var hoverLeft = menuBounds.Center.x > screenBounds.Center.x;
                 var hoverUp = menuBounds.Center.y > screenBounds.Center.y;
                 if (hoverLeft)
-                    this.X = this._position.x - menuBounds.Width - menuBounds.Width * 0.1;
+                    this.X -= menuBounds.Width - this._targetBounds.Width * 0.1;
+                else
+                    this.X += this._targetBounds.Width + this._targetBounds.Width * 0.1;
                 if (hoverUp)
-                    this.Y = this._position.y - menuBounds.Height - menuBounds.Height * 0.1;
+                    this.Y -= menuBounds.Height - this._targetBounds.Height * 0.1;
+                else
+                    this.Y += this._targetBounds.Height + this._targetBounds.Height * 0.1;
             };
             OverlayMenu.prototype.update = function () {
-                if (this._target == null)
+                if (this._targetBounds == null)
                     return;
-                this.X = this._target.offsetLeft;
-                this.Y = this._target.offsetTop;
+                this.X = this._targetBounds.Left;
+                this.Y = this._targetBounds.Top;
                 this._keepInBounds();
             };
             Object.defineProperty(OverlayMenu.prototype, "Bounds", {
@@ -593,8 +604,9 @@ var celestials;
     (function (ui) {
         var CelestialOverlay = (function (_super) {
             __extends(CelestialOverlay, _super);
-            function CelestialOverlay(target, node, nameNode, sequenceNode) {
-                var _this = _super.call(this, node || document.querySelector(".overlay-menu.celestial").cloneNode(true), target) || this;
+            function CelestialOverlay(celestial, node, nameNode, sequenceNode) {
+                var _this = _super.call(this, node || document.querySelector(".overlay-menu.celestial").cloneNode(true), celestial.Bounds) || this;
+                _this._celestial = celestial;
                 _this._nameNode = nameNode || _this._node.querySelector(".name");
                 _this._sequenceNode = sequenceNode || _this._node.querySelector(".sequence");
                 return _this;
@@ -604,6 +616,10 @@ var celestials;
             };
             CelestialOverlay.prototype.changeSequence = function (sequence) {
                 this._sequenceNode.innerHTML = sequence;
+            };
+            CelestialOverlay.prototype.update = function () {
+                this.changeTargetBounds(this._celestial.Bounds);
+                _super.prototype.update.call(this);
             };
             return CelestialOverlay;
         }(ui.OverlayMenu));
@@ -621,6 +637,7 @@ var celestials;
                 _this._container = container;
                 console.log(_this._node);
                 _this._mainImage = _this._node.querySelector(".main-image");
+                _this._paused = false;
                 _this._node.dataset.name = _this.Name;
                 console.log("Created: " + _this.Name);
                 _this._eventsRegistry = new celestials.Dictionary();
@@ -628,6 +645,7 @@ var celestials;
                 _this._eventsRegistry.add("stateChange", _this._onStateChange.bind(_this));
                 _this._eventsRegistry.add("stateComplete", _this._onStateComplete.bind(_this));
                 _this._eventsRegistry.add("wallHit", _this._onWallHit.bind(_this));
+                _this._eventsRegistry.add("rightClick", _this._onRightClicked.bind(_this));
                 return _this;
             }
             Celestial.prototype.draw = function (src) {
@@ -656,6 +674,17 @@ var celestials;
                 if (this.getImage(this._sequencer.CurrentFrame.name) == this._mainImage.src)
                     return new Promise(function (resolve, reject) { resolve(this._mainImage); });
                 return this.draw(this.getImage(this._sequencer.CurrentFrame.name));
+            };
+            Celestial.prototype.pause = function () {
+                this._paused = true;
+            };
+            Celestial.prototype.unpause = function () {
+                this._paused = false;
+            };
+            Celestial.prototype.remove = function () {
+                this.unload();
+                this._node.remove();
+                this._overlayMenu.remove();
             };
             Celestial.prototype.clone = function () {
                 var clone = new Celestial(celestials.managers.CelestialsManager.Template, this._container, JSON.parse(JSON.stringify(this._data)));
@@ -765,7 +794,7 @@ var celestials;
                                 console.log(_this._imagesLookup.FullList);
                                 _this._logic.load()
                                     .then(function () {
-                                    _this._overlayMenu = new celestials.ui.CelestialOverlay(_this._node);
+                                    _this._overlayMenu = new celestials.ui.CelestialOverlay(_this);
                                     _this._node.parentNode.appendChild(_this._overlayMenu.Node);
                                     resolve();
                                     _this._isLoaded = true;
@@ -775,6 +804,7 @@ var celestials;
                                 _this._sequencer.addStateCompleteListener(_this._eventsRegistry.getValue("stateComplete"));
                                 _this._physics.addWallHitListener(_this._eventsRegistry.getValue("wallHit"));
                                 _this._node.addEventListener("click", function () { return console.log("I'VE CLICKED: " + _this.Name); });
+                                _this._node.addEventListener("contextmenu", _this._eventsRegistry.getValue("rightClick"));
                             });
                         });
                     }
@@ -788,12 +818,16 @@ var celestials;
                 this._sequencer.removeStateChangeListener();
                 this._sequencer.removeStateCompleteListener();
                 this._physics.removeWallHitListener();
+                this._node.removeEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
             };
             Celestial.prototype.update = function () {
                 return __awaiter(this, void 0, void 0, function () {
                     return __generator(this, function (_a) {
                         switch (_a.label) {
-                            case 0: return [4, this._logic.update()];
+                            case 0:
+                                if (this._paused)
+                                    return [2];
+                                return [4, this._logic.update()];
                             case 1:
                                 _a.sent();
                                 return [4, this._sequencer.update()];
@@ -827,6 +861,11 @@ var celestials;
                 console.log("Hit wall " + which);
                 this._logic.handleWallHit(which);
             };
+            Celestial.prototype._onRightClicked = function (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                celestials.ui.CelestialContext.show(this);
+            };
             Object.defineProperty(Celestial.prototype, "Lookup", {
                 get: function () { return this.Data.lookup; },
                 enumerable: true,
@@ -849,6 +888,11 @@ var celestials;
             });
             Object.defineProperty(Celestial.prototype, "Logic", {
                 get: function () { return this._logic; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Celestial.prototype, "Paused", {
+                get: function () { return this._paused; },
                 enumerable: true,
                 configurable: true
             });
@@ -1180,6 +1224,13 @@ var celestials;
                     });
                 });
             };
+            CelestialsManager.removeCelestial = function (celestial) {
+                var index = CelestialsManager._instance._celestials.indexOf(celestial);
+                if (index != -1) {
+                    var cel = CelestialsManager._instance._celestials.splice(index, 1)[0];
+                    cel.remove();
+                }
+            };
             CelestialsManager.update = function () {
                 var e_7, _a;
                 try {
@@ -1387,6 +1438,257 @@ var celestials;
 })(celestials || (celestials = {}));
 var celestials;
 (function (celestials) {
+    var ui;
+    (function (ui) {
+        var components;
+        (function (components) {
+            var Dropdown = (function () {
+                function Dropdown(node, template) {
+                    this._node = node;
+                    this._itemTemplate = template;
+                    this._itemTemplate.classList.add("hide");
+                    this._items = new Array();
+                }
+                Dropdown.prototype.createItem = function () {
+                    var item = this._itemTemplate.cloneNode(true);
+                    item.classList.remove("template", "hide");
+                    return item;
+                };
+                Dropdown.prototype.addItem = function (node, callback) {
+                    var item = new components.Item(node);
+                    item.wireSelector(item.Node);
+                    item.addSelectListener(function (select) {
+                        callback();
+                    });
+                    this._items.push(item);
+                    this._node.appendChild(item.Node);
+                };
+                Dropdown.prototype.removeItemAt = function (index) {
+                    var item = this._items.splice(index, 1)[0];
+                    item.Node.remove();
+                    item = null;
+                };
+                Dropdown.prototype.clearItems = function () {
+                    for (var i = this._items.length - 1; i >= 0; i--)
+                        this.removeItemAt(i);
+                };
+                Dropdown.prototype.addSelectListener = function (callback) {
+                    this._selectListener = callback;
+                };
+                Dropdown.prototype.removeSelectListener = function () {
+                    this._selectListener = null;
+                };
+                Object.defineProperty(Dropdown.prototype, "Items", {
+                    get: function () { return this._items; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return Dropdown;
+            }());
+            components.Dropdown = Dropdown;
+        })(components = ui.components || (ui.components = {}));
+    })(ui = celestials.ui || (celestials.ui = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
+    var ui;
+    (function (ui) {
+        var components;
+        (function (components) {
+            var MultiDropdown = (function (_super) {
+                __extends(MultiDropdown, _super);
+                function MultiDropdown(node, template, headerTemplate, indentNodeTemplate, indentTemplate) {
+                    var _this = _super.call(this, node, template) || this;
+                    _this._headerTemplate = headerTemplate;
+                    _this._indentNodeTemplate = indentNodeTemplate;
+                    _this._indentTemplate = indentTemplate || _this._itemTemplate;
+                    _this._headerTemplate.classList.add("hide");
+                    _this._indentNodeTemplate.classList.add("hide");
+                    _this._indentTemplate.classList.add("hide");
+                    _this._indents = new Array();
+                    return _this;
+                }
+                MultiDropdown.prototype.createIndent = function () {
+                    var indent = this._indentNodeTemplate.cloneNode(true);
+                    indent.classList.remove("template", "hide");
+                    var ul = document.createElement("ul");
+                    this._indents.push(indent);
+                    return indent;
+                };
+                MultiDropdown.prototype.addItemToLastIndent = function (node, callback) {
+                    var item = new components.Item(node);
+                    item.wireSelector(item.Node);
+                    item.addSelectListener(function (select) {
+                        callback();
+                    });
+                    this._items.push(item);
+                    var indent = this._indents[this._indents.length - 1];
+                    if (indent instanceof HTMLUListElement) {
+                        indent.appendChild(item.Node);
+                    }
+                    else {
+                        var ul = indent.querySelector("ul");
+                        ul.appendChild(item.Node);
+                    }
+                };
+                MultiDropdown.prototype.addLastIndent = function (title) {
+                    var titleNode = this._headerTemplate.cloneNode(true);
+                    titleNode.innerHTML = title;
+                    titleNode.classList.remove("template", "hide");
+                    this._node.appendChild(titleNode);
+                    var titleIconNode = document.createElement("div");
+                    titleIconNode.innerHTML = "&#9655;";
+                    titleNode.appendChild(titleIconNode);
+                    this._node.appendChild(this._indents[this._indents.length - 1]);
+                };
+                MultiDropdown.prototype.clear = function () {
+                    return __awaiter(this, void 0, void 0, function () {
+                        var i, indent;
+                        return __generator(this, function (_a) {
+                            this.clearItems();
+                            for (i = this._indents.length - 1; i >= 0; i--) {
+                                indent = this._indents[i];
+                                this._indents.splice(i, 1);
+                                indent.parentNode.removeChild(indent);
+                                indent = null;
+                            }
+                            while (this._node.hasChildNodes()) {
+                                this._node.removeChild(this._node.lastChild);
+                            }
+                            return [2];
+                        });
+                    });
+                };
+                return MultiDropdown;
+            }(components.Dropdown));
+            components.MultiDropdown = MultiDropdown;
+        })(components = ui.components || (ui.components = {}));
+    })(ui = celestials.ui || (celestials.ui = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
+    var ui;
+    (function (ui) {
+        var CelestialContext = (function () {
+            function CelestialContext(node) {
+                var ctx = document.querySelector(".context-menu.celestial");
+                CelestialContext._node = node;
+                CelestialContext._nameNode = ctx.querySelector(".name");
+                CelestialContext._typeNode = ctx.querySelector(".type");
+                var statesNode = ctx.querySelector(".states");
+                CelestialContext._statesDropdown = new ui.components.MultiDropdown(statesNode.querySelector(".ctx-dropdown.template"), statesNode.querySelector(".ctx-item.template"), statesNode.querySelector(".ctx-dropdown-header.template"), statesNode.querySelector(".ctx-dropdown-2.template"), statesNode.querySelector(".ctx-dropdown-2 .ctx-item.template"));
+                var actionsNode = ctx.querySelector(".actions");
+                CelestialContext._actionsDropdown = new ui.components.MultiDropdown(actionsNode.querySelector(".ctx-dropdown.template"), actionsNode.querySelector(".ctx-item.template"), actionsNode.querySelector(".ctx-dropdown-header.template"), actionsNode.querySelector(".ctx-dropdown-2.template"), actionsNode.querySelector(".ctx-dropdown-2 .ctx-item.template"));
+            }
+            CelestialContext.show = function (celestial) {
+                var e_15, _a;
+                console.log("CEL: " + celestial);
+                if (celestial == null)
+                    return;
+                CelestialContext._node.classList.remove("hide");
+                CelestialContext._nameNode.innerHTML = celestial.Name;
+                CelestialContext._typeNode.innerHTML = celestial.Lookup;
+                var statesDrop = CelestialContext._statesDropdown;
+                statesDrop.clear();
+                var _loop_4 = function (indentData) {
+                    var e_16, _a;
+                    var state = celestials.engines.CelestialSequencer.State[indentData];
+                    var sequences = celestial.Sequencer.getStateSequences(state);
+                    if (sequences == null)
+                        return "continue";
+                    statesDrop.createIndent();
+                    var _loop_5 = function (seq) {
+                        this_1._createIndentItem(statesDrop, seq.name, function () {
+                            celestial.Sequencer.changeState(state);
+                            celestial.Sequencer.changeSequence(celestial.Sequencer.getSequenceByName(seq.name));
+                            console.log("SEQUENCE: " + seq.name);
+                        });
+                    };
+                    try {
+                        for (var sequences_1 = __values(sequences), sequences_1_1 = sequences_1.next(); !sequences_1_1.done; sequences_1_1 = sequences_1.next()) {
+                            var seq = sequences_1_1.value;
+                            _loop_5(seq);
+                        }
+                    }
+                    catch (e_16_1) { e_16 = { error: e_16_1 }; }
+                    finally {
+                        try {
+                            if (sequences_1_1 && !sequences_1_1.done && (_a = sequences_1.return)) _a.call(sequences_1);
+                        }
+                        finally { if (e_16) throw e_16.error; }
+                    }
+                    statesDrop.addLastIndent(indentData);
+                };
+                var this_1 = this;
+                try {
+                    for (var _b = __values(Object.keys(celestials.engines.CelestialSequencer.State)), _c = _b.next(); !_c.done; _c = _b.next()) {
+                        var indentData = _c.value;
+                        _loop_4(indentData);
+                    }
+                }
+                catch (e_15_1) { e_15 = { error: e_15_1 }; }
+                finally {
+                    try {
+                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                    }
+                    finally { if (e_15) throw e_15.error; }
+                }
+                var actionsDrop = CelestialContext._actionsDropdown;
+                actionsDrop.clear();
+                actionsDrop.createIndent();
+                this._createIndentItem(actionsDrop, "Flip X", function () { celestial.flipX(); });
+                this._createIndentItem(actionsDrop, "Nudge Left", function () { celestial.Physics.addForceX(-50); });
+                this._createIndentItem(actionsDrop, "Nudge Right", function () { celestial.Physics.addForceX(50); });
+                this._createIndentItem(actionsDrop, "Nudge Up", function () { celestial.Physics.addForceY(-150); });
+                this._createIndentItem(actionsDrop, "Nudge Down", function () { celestial.Physics.addForceY(50); });
+                actionsDrop.addLastIndent("General");
+                actionsDrop.createIndent();
+                this._createIndentItem(actionsDrop, "Send to Front", function () { return console.log("Send to FRONT"); });
+                this._createIndentItem(actionsDrop, "Send to Back", function () { return console.log("Send to BACK"); });
+                actionsDrop.addLastIndent("Sorting");
+                actionsDrop.createIndent();
+                this._createIndentItem(actionsDrop, "Pause/Unpause", function () { (celestial.Paused) ? celestial.unpause() : celestial.pause(); });
+                this._createIndentItem(actionsDrop, "Copy", function () { celestials.managers.CelestialsManager.addCelestial(celestial.Lookup); });
+                this._createIndentItem(actionsDrop, "Delete", function () { celestials.managers.CelestialsManager.removeCelestial(celestial); });
+                actionsDrop.addLastIndent("Control");
+                CelestialContext._keepOnScreen(celestial.Bounds);
+            };
+            CelestialContext.hide = function () {
+                CelestialContext._node.classList.add("hide");
+            };
+            CelestialContext._createIndentItem = function (dropdown, title, action) {
+                var item = dropdown.createItem();
+                item.innerHTML = title;
+                var act = function () {
+                    action();
+                    CelestialContext.hide();
+                };
+                dropdown.addItemToLastIndent(item, act);
+            };
+            CelestialContext._keepOnScreen = function (celBounds) {
+                var node = CelestialContext._node;
+                var x = celBounds.Left;
+                var y = celBounds.Top;
+                if (x + node.offsetWidth > celestials.App.Bounds.Right)
+                    x = celestials.App.Bounds.Right - node.offsetWidth - 150;
+                if (y + node.offsetHeight > celestials.App.Bounds.Bottom)
+                    y = celestials.App.Bounds.Bottom - node.offsetHeight - 150;
+                node.style.left = x + "px";
+                node.style.top = y + "px";
+            };
+            Object.defineProperty(CelestialContext, "StatesDropdown", {
+                get: function () { return CelestialContext._statesDropdown; },
+                enumerable: true,
+                configurable: true
+            });
+            return CelestialContext;
+        }());
+        ui.CelestialContext = CelestialContext;
+    })(ui = celestials.ui || (celestials.ui = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
+    var CC = celestials.ui.CelestialContext;
     var App = (function () {
         function App(win, node) {
             App._instance = this;
@@ -1397,12 +1699,14 @@ var celestials;
         }
         App.setup = function () {
             return __awaiter(this, void 0, void 0, function () {
-                var iM, cM, controls, debug;
+                var celContext, iM, cM, controls, debug;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
                             console.log("SETUP");
                             App._bounds = new celestials.Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight);
+                            celContext = new CC(document.querySelector(".context-menu.celestial"));
+                            CC.hide();
                             return [4, new celestials.managers.InputManager()];
                         case 1:
                             iM = _a.sent();
@@ -1786,7 +2090,7 @@ var celestials;
                     var _this = this;
                     return __generator(this, function (_a) {
                         return [2, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                                var state, sequence, e_15;
+                                var state, sequence, e_17;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
@@ -1801,8 +2105,8 @@ var celestials;
                                             resolve();
                                             return [3, 3];
                                         case 2:
-                                            e_15 = _a.sent();
-                                            reject(new Error("Could not load Logic on " + this._celestial.Name + "\n" + e_15));
+                                            e_17 = _a.sent();
+                                            reject(new Error("Could not load Logic on " + this._celestial.Name + "\n" + e_17));
                                             return [3, 3];
                                         case 3: return [2];
                                     }
@@ -1928,10 +2232,32 @@ var celestials;
                     return this.getRandomState(omitCurrentState);
                 return state;
             };
+            CelestialSequencer.prototype.getStateSequences = function (state) {
+                return (this._sequences[state] != null) ? this._sequences[state].sequences : null;
+            };
             CelestialSequencer.prototype.getRandomStateSequence = function (state) {
                 var sequences = this._sequences[state].sequences;
                 if (sequences.length > 0)
                     return sequences[celestials.randomRangeInt(0, sequences.length - 1)];
+                return null;
+            };
+            CelestialSequencer.prototype.getSequenceByName = function (name) {
+                var e_18, _a;
+                var sequences = this._sequences[this._currentState].sequences;
+                try {
+                    for (var sequences_2 = __values(sequences), sequences_2_1 = sequences_2.next(); !sequences_2_1.done; sequences_2_1 = sequences_2.next()) {
+                        var seq = sequences_2_1.value;
+                        if (seq.name == name)
+                            return seq;
+                    }
+                }
+                catch (e_18_1) { e_18 = { error: e_18_1 }; }
+                finally {
+                    try {
+                        if (sequences_2_1 && !sequences_2_1.done && (_a = sequences_2.return)) _a.call(sequences_2);
+                    }
+                    finally { if (e_18) throw e_18.error; }
+                }
                 return null;
             };
             CelestialSequencer.prototype.changeSequence = function (sequence) {
@@ -1953,7 +2279,7 @@ var celestials;
                 for (var _i = 0; _i < arguments.length; _i++) {
                     states[_i] = arguments[_i];
                 }
-                var e_16, _a;
+                var e_19, _a;
                 try {
                     for (var states_1 = __values(states), states_1_1 = states_1.next(); !states_1_1.done; states_1_1 = states_1.next()) {
                         var state = states_1_1.value;
@@ -1961,12 +2287,12 @@ var celestials;
                             return true;
                     }
                 }
-                catch (e_16_1) { e_16 = { error: e_16_1 }; }
+                catch (e_19_1) { e_19 = { error: e_19_1 }; }
                 finally {
                     try {
                         if (states_1_1 && !states_1_1.done && (_a = states_1.return)) _a.call(states_1);
                     }
-                    finally { if (e_16) throw e_16.error; }
+                    finally { if (e_19) throw e_19.error; }
                 }
                 return false;
             };
@@ -2054,6 +2380,97 @@ var celestials;
         }());
         engines.CelestialSequencer = CelestialSequencer;
     })(engines = celestials.engines || (celestials.engines = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
+    var ui;
+    (function (ui) {
+        var components;
+        (function (components) {
+            var List = (function () {
+                function List(node, template) {
+                    this._node = node;
+                    this._template = template;
+                    this._template.classList.add("hide");
+                    this._items = new Array();
+                    this.clear();
+                }
+                List.prototype.createItem = function (bubbleSelect) {
+                    var _this = this;
+                    if (bubbleSelect === void 0) { bubbleSelect = true; }
+                    var item = new Item(this._template.cloneNode(true));
+                    item.Node.classList.remove("template");
+                    item.Node.classList.add("hide");
+                    if (bubbleSelect) {
+                        item.Node.addEventListener("click", function () { return item.select(); });
+                    }
+                    item.addSelectListener(function (selected) {
+                        _this._index = _this._items.indexOf(selected);
+                        if (_this._onSelectCallback != null)
+                            _this._onSelectCallback(_this._index);
+                    });
+                    return item;
+                };
+                List.prototype.addItemToList = function (item) {
+                    item.Node.classList.remove("hide");
+                    this._items.push(item);
+                    this._node.appendChild(item.Node);
+                };
+                List.prototype.removeItemAt = function (index) {
+                    var removedItem = this._items.splice(index, 1)[0];
+                    removedItem.Node.remove();
+                    removedItem = null;
+                };
+                List.prototype.clear = function () {
+                    for (var i = this._items.length - 1; i >= 0; i--)
+                        this.removeItemAt(i);
+                };
+                List.prototype.addSelectListener = function (callback) {
+                    this._onSelectCallback = callback;
+                };
+                List.prototype.removeSelectListener = function () {
+                    this._onSelectCallback = null;
+                };
+                return List;
+            }());
+            components.List = List;
+            var Item = (function () {
+                function Item(node) {
+                    this._node = node;
+                }
+                Item.prototype.select = function () {
+                    if (this._onSelectCallback != null)
+                        this._onSelectCallback(this);
+                };
+                Item.prototype.wireSelector = function (element) {
+                    var _this = this;
+                    var node = element || this._node;
+                    node.addEventListener("click", function () {
+                        _this.select();
+                    });
+                };
+                Item.prototype.wireSelectEvent = function () {
+                    var _this = this;
+                    this._node.querySelector(".btnDelete").addEventListener("click", function () {
+                        _this.select();
+                    });
+                };
+                Item.prototype.addSelectListener = function (callback) {
+                    this._onSelectCallback = callback;
+                };
+                Item.prototype.removeSelectListener = function () {
+                    this._onSelectCallback = null;
+                };
+                Object.defineProperty(Item.prototype, "Node", {
+                    get: function () { return this._node; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return Item;
+            }());
+            components.Item = Item;
+        })(components = ui.components || (ui.components = {}));
+    })(ui = celestials.ui || (celestials.ui = {}));
 })(celestials || (celestials = {}));
 var celestials;
 (function (celestials) {

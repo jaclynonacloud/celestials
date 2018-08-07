@@ -2,9 +2,11 @@
 ///<reference path="./systems/Debugger.ts" />
 ///<reference path="./managers/CelestialsManager.ts" />
 ///<reference path="./managers/InputManager.ts" />
+///<reference path="./components/ui/CelestialContext.ts" />
 namespace celestials {
     // const path = require('path');
     // const fs = require('fs');
+    import CC = ui.CelestialContext;
 
     export class App {
         private static _instance:App;
@@ -27,6 +29,10 @@ namespace celestials {
             console.log("SETUP");
             App._bounds = new Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight);
 
+            //test the context
+            let celContext = new CC(document.querySelector(".context-menu.celestial"));
+            CC.hide();
+
             //initialize managers
             let iM = await new managers.InputManager();
             let cM = await new managers.CelestialsManager();
@@ -37,6 +43,9 @@ namespace celestials {
 
             // console.log("FILES");
             // console.log(this.read('./'));
+
+            
+            // return;
 
             
             //create update loop

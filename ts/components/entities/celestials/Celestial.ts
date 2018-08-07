@@ -25,6 +25,8 @@ namespace celestials.entities {
         private _scale:number;
         private _eventsRegistry:Dictionary<string, any>;
 
+        private _paused:boolean;
+
         //debug
         private _overlayMenu:ui.CelestialOverlay;
 
@@ -37,6 +39,8 @@ namespace celestials.entities {
             console.log(this._node);
             this._mainImage = this._node.querySelector(".main-image");
 
+            this._paused = false;
+
             //add name to node
             this._node.dataset.name = this.Name;
             console.log("Created: " + this.Name);
@@ -46,6 +50,7 @@ namespace celestials.entities {
             this._eventsRegistry.add("stateChange", this._onStateChange.bind(this));
             this._eventsRegistry.add("stateComplete", this._onStateComplete.bind(this));
             this._eventsRegistry.add("wallHit", this._onWallHit.bind(this));
+            this._eventsRegistry.add("rightClick", this._onRightClicked.bind(this));
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -88,6 +93,21 @@ namespace celestials.entities {
             //TODO remove; redundant line below -- it is covered in the main draw -- for testing only
             if(this.getImage(this._sequencer.CurrentFrame.name) == this._mainImage.src) return new Promise(function(resolve, reject) { resolve(this._mainImage);})
             return this.draw(this.getImage(this._sequencer.CurrentFrame.name));
+        }
+
+        public pause() {
+            this._paused = true;
+        }
+        public unpause() {
+            this._paused = false;
+        }
+
+
+        public remove() {
+            this.unload();
+            this._node.remove();
+
+            this._overlayMenu.remove();
         }
         
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
@@ -200,11 +220,16 @@ namespace celestials.entities {
                                         .then(() => {
 
                                             //DEBUG: Created a ui menu item to show current controls
-                                            this._overlayMenu = new ui.CelestialOverlay(this._node);
+                                            this._overlayMenu = new ui.CelestialOverlay(this);
                                             this._node.parentNode.appendChild(this._overlayMenu.Node);
 
                                             resolve();
                                             this._isLoaded = true;
+
+
+                                            //DEBUG: THIS IS A TEST
+                                            //create context menu
+                                            // ui.CelestialContext.show(this);
                                         });
                                     
             
@@ -215,6 +240,7 @@ namespace celestials.entities {
                                     this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
                                     //TODO I've setup the click event, don't readd unless removing this one
                                     this._node.addEventListener("click", () => console.log("I'VE CLICKED: " + this.Name));
+                                    this._node.addEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
                                 });
     
     
@@ -238,9 +264,13 @@ namespace celestials.entities {
             this._sequencer.removeStateChangeListener();
             this._sequencer.removeStateCompleteListener();
             this._physics.removeWallHitListener();
+
+            this._node.removeEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
         }
 
         public async update() {
+            if(this._paused) return;
+
             //update sequence
             // logic > sequencer > draw > physics
             await this._logic.update();
@@ -284,11 +314,20 @@ namespace celestials.entities {
             //tell logic
             this._logic.handleWallHit(which);
         }
+
+
+        private _onRightClicked(e:Event) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            //show context menu
+            ui.CelestialContext.show(this);
+        }
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
         public get Lookup():string { return this.Data.lookup; }
         public get Data():ICelestial { return this._data as ICelestial; }
         public get Sequencer():engines.CelestialSequencer { return this._sequencer; }
         public get Physics():engines.Physics { return this._physics; }
         public get Logic():logic.CelestialLogic { return this._logic; }
+        public get Paused():boolean { return this._paused; }
     }
 }

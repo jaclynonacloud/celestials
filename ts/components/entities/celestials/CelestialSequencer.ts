@@ -119,11 +119,26 @@ namespace celestials.engines {
             return state;
         }
 
+        public getStateSequences(state:string):ICelestialSequence[] {
+            return (this._sequences[state] != null) ? this._sequences[state].sequences : null;
+        }
+
         /**Returns a random sequence from a given state.  Use the CelestialLogic.State options. */
         public getRandomStateSequence(state:string):ICelestialSequence {
             const sequences = this._sequences[state].sequences;
             if(sequences.length > 0)
                 return sequences[randomRangeInt(0, sequences.length-1)];
+            return null;
+        }
+
+        public getSequenceByName(name:string):ICelestialSequence {
+            //look for sequence in state
+            let sequences = this._sequences[this._currentState].sequences;
+            for(let seq of sequences) {
+                if(seq.name == name)
+                    return seq;
+            }
+
             return null;
         }
 

@@ -87,6 +87,14 @@ namespace celestials.managers{
             }
         }
 
+        public static removeCelestial(celestial:Celestial) {
+            let index = CelestialsManager._instance._celestials.indexOf(celestial);
+            if(index != -1) {
+                let cel = CelestialsManager._instance._celestials.splice(index, 1)[0];
+                cel.remove();
+            }
+        }
+
         public static update() {
             //update the current celestials
             for(let cel of CelestialsManager._instance._celestials)

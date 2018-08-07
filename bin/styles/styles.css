@@ -7,6 +7,7 @@
 html, body {
     background: rgba(0, 0, 0, 0);
     font-family: nunito-sans, sans-serif;
+    overflow: hidden;
 }
 
 
@@ -65,8 +66,9 @@ html, body {
     border-radius: 5px 0;
     overflow: hidden;
 }
+
 .overlay-menu.celestial .name {
-    background: #d8dbd8;
+    background: #e1e6e1;
     font-size: 1.2em;
     font-weight: bold;
     margin: -3px -5px 5px -5px;
@@ -74,10 +76,99 @@ html, body {
 }
 
 
+.context-menu {
+    position: absolute;
+    display: flex;
+    flex-flow: column wrap;
+    max-height: 70vh;
+    font-size: 0.8em;
+    z-index: 40;
+    pointer-events: all;
+}
+/* Menu Items */
+.context-menu > .name {
+    width: 100%;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.2em;
+}
+.context-menu > .type {
+    width: 100%;
+    text-align: center;
+    font-style: italic;
+}
+.context-menu > .type::after, .context-menu > .type::before {
+    content: '"';
+}
+.ctx-dropdown-group {
+    background: #eef0ee;
+    display: flex;
+    flex-flow: column;
+    min-width: 100%;
+    width: max-content;
+}
+.ctx-dropdown-name {
+    background: #e1e6e1;
+    font-size: 1.1em;
+    padding: 3px 10px;
+}
+.ctx-dropdown {
+    display: flex;
+    flex-flow: column wrap;
+    max-height: 150px;
+    font-size: 0.8em;
+}
+ul.ctx-dropdown, .ctx-dropdown ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.ctx-dropdown li:not(.ctx-dropdown-2) {
+    padding: 4px 15px;
+    z-index: 3;
+}
+.ctx-dropdown > li {
+    cursor: pointer;
+}
+.ctx-dropdown > li:hover {
+    background: #e1ebe5;
+}
+.ctx-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    cursor: default !important;
+}
+.ctx-dropdown-header:hover + .ctx-dropdown-2 {
+    display: block;
+}
+.ctx-dropdown-2 {
+    position: relative;
+    top: -22px;
+    display: none;
+    z-index: 4;
+}
+.ctx-dropdown-2:hover {
+    display: block;
+}
+.ctx-dropdown-2 ul {
+    position: absolute;
+    background: #eaf0ea;
+    top: 0;
+    left: 100%;
+    min-width: 120px;
+    width: max-content;
+}
+.ctx-dropdown-2 li {
+    padding: 4px !important;
+}
+.ctx-dropdown-2 li:hover {
+    background: #e1ebe5;
+}
 
 .context-menu.celestial {
-    background: red;
-    min-width: 250px;
+    background: #f4f5f4;
+    min-width: 150px;
     min-height: 250px;
-    max-width: max-content;
+    align-items: flex-start;
+    width: max-content;
 }
