@@ -121,6 +121,18 @@
             ],
             "sequences" : [
             {
+                "name" : "Short Walk No Jump",
+                "duration" : 300,
+                "looping" : true,
+                "frames" : [
+                    {"name" : "idle0", "hold" : 30, "moveSpeed" : 0.3 },
+                    {"name" : "idle1", "hold" : 1, "moveSpeed" : 2 },
+                    {"name" : "idle1", "hold" : 40, "moveSpeed" : 2 },
+                    {"name" : "idle2", "hold" : 40, "moveSpeed" : 2 },
+                    {"name" : "idle3", "hold" : 15, "moveSpeed" : 1 }
+                ]
+            },
+            {
                 "name" : "shortWalk",
                 "duration" : 300,
                 "looping" : true,

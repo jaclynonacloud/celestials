@@ -122,6 +122,31 @@ namespace celestials.engines {
                 this._onWallHitListener(wall);
         }
 
+
+        isTouchingWall(...walls:number[]) {
+            let screenBounds:Rect = App.Bounds;
+            let entityBounds:Rect = this._entity.Bounds;
+
+            for(let wall of walls) {
+                switch(wall) {
+                    case Physics.Wall.Left:
+                        if(entityBounds.Left <= screenBounds.Left) return true;
+                        break;
+                    case Physics.Wall.Right:
+                        if(entityBounds.Right >= screenBounds.Right) return true;
+                        break;
+                    case Physics.Wall.Top:
+                        if(entityBounds.Top <= screenBounds.Top) return true;
+                        break;
+                    case Physics.Wall.Bottom:
+                        if(entityBounds.Bottom >= screenBounds.Bottom) return true;
+                        break;
+                }
+            }
+
+            return false;
+        }
+
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         async update() {

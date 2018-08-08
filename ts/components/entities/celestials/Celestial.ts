@@ -33,10 +33,6 @@ namespace celestials.entities {
         constructor(node:HTMLElement, container:HTMLElement, json:ICelestial) {
             super(json.name, node, json as any);
             this._container = container;
-            //create the main image holder
-            // this._mainImage = document.createElement("img");
-            // this._mainImage.classList.add("mainImage");
-            console.log(this._node);
             this._mainImage = this._node.querySelector(".main-image");
 
             this._paused = false;
@@ -139,60 +135,64 @@ namespace celestials.entities {
     
                             //iterate through each image
                             let promises = new Array();
-                            for(let imgData of data.images) {
-                                promises.push(
-                                    new Promise((res, rej) => {
-                                        try {
-                                            //go get the images to load
-                                            let img = document.createElement("img");
-                                            //listen for load
-                                            img.onload = () => {
-                                                //set the image
-                                                console.log("loaded image!");
-                                                // imgData.src = img.src;
-                                                if(!this.addImage(imgData.name, img.src))
-                                                    throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
-                                                res();
+                            if(data.images != null) {
+                                for(let imgData of data.images) {
+                                    promises.push(
+                                        new Promise((res, rej) => {
+                                            try {
+                                                //go get the images to load
+                                                let img = document.createElement("img");
+                                                //listen for load
+                                                img.onload = () => {
+                                                    //set the image
+                                                    console.log("loaded image!");
+                                                    // imgData.src = img.src;
+                                                    if(!this.addImage(imgData.name, img.src))
+                                                        throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
+                                                    res();
+                                                }
+                                                //load the image
+                                                img.src = data.path + imgData.path;
                                             }
-                                            //load the image
-                                            img.src = data.path + imgData.path;
-                                        }
-                                        catch(e) {
-                                            rej();
-                                        }
-                                    })
-                                );
+                                            catch(e) {
+                                                rej();
+                                            }
+                                        })
+                                    );
+                                }
                             }
                             //iterate through each spritesheet
-                            for(let spritesheet of data.spritesheets) {
-                                promises.push(
-                                    new Promise((res, rej) => {
-                                        try {
-                                            //go get the images to load
-                                            let img = document.createElement("img");
-                                            //listen for laod
-                                            img.onload = () => {
-                                                //set each frame
-                                                for(let frame of spritesheet.frames) {
-                                                    console.log("loaded sprite!");
-                                                    //give the chop
-                                                    cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
-                                                        //set as the image
-                                                        // frame.src = crop.src;
-                                                        if(!this.addImage(frame.name, crop.src))
-                                                            throw new Error(`An image already exists belonging to ${this.Name} - ${frame.name}.  Please choose a unique name.`);
-                                                        res();
-                                                    });
+                            if(data.spritesheets != null) {
+                                for(let spritesheet of data.spritesheets) {
+                                    promises.push(
+                                        new Promise((res, rej) => {
+                                            try {
+                                                //go get the images to load
+                                                let img = document.createElement("img");
+                                                //listen for laod
+                                                img.onload = () => {
+                                                    //set each frame
+                                                    for(let frame of spritesheet.frames) {
+                                                        console.log("loaded sprite!");
+                                                        //give the chop
+                                                        cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
+                                                            //set as the image
+                                                            // frame.src = crop.src;
+                                                            if(!this.addImage(frame.name, crop.src))
+                                                                throw new Error(`An image already exists belonging to ${this.Name} - ${frame.name}.  Please choose a unique name.`);
+                                                            res();
+                                                        });
+                                                    }
                                                 }
+                                                //load the spritesheet image
+                                                img.src = data.path + spritesheet.path;
                                             }
-                                            //load the spritesheet image
-                                            img.src = data.path + spritesheet.path;
-                                        }
-                                        catch(e) {
-                                            rej();
-                                        }
-                                    })
-                                );
+                                            catch(e) {
+                                                rej();
+                                            }
+                                        })
+                                    );
+                                }
                             }
 
                             //once all images are loaded - continue

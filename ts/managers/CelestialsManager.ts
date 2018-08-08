@@ -37,7 +37,9 @@ namespace celestials.managers{
         private async _setup() {
             //load files
             //for now, just give the folders
-            let files = ["./res/celestials/solaris/solaris.json"];
+            let files = [
+                // "./res/celestials/solaris/solaris.json",
+                        "./res/celestials/anthony/anthony.json"];
 
             for(const file of files) {
                 await fetchJson(file, (json) => {
@@ -72,17 +74,12 @@ namespace celestials.managers{
             //get celestial from lookup
             let celestial:Celestial = CelestialsManager._lookup.getValue(lookup);
             if(celestial != null) {
-                console.log("START BUILD");
                 // let copy:Celestial = celestial.clone();
                 let data:ICelestial = CelestialsManager._data.getValue(lookup);
-                console.log("PASSING THE FOLLOWING DATA: " + data.position.x + ", " + data.position.y);
                 let copy:Celestial = celestial.clone();
-                console.log("COMPLETE BUILD");
                 //TODO create COPY, not just use the template
                 if(copy.load()) {
-                    console.log("LOAD");
                     await CelestialsManager._instance._celestials.push(copy);
-                    console.log("FINISH LOAD");
                 }
             }
         }

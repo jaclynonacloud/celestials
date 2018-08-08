@@ -85,12 +85,12 @@ namespace celestials.entities {
 
 
         public flipX() {
-            console.log("DIR: " + this._direction);
             //flip the entity
             this._direction.x *= -1;
             this.setDirectionX(this._direction.x);
         }
         public setDirectionX(value:number) {
+            console.log("DIRECTION CHANGE: " + value);
             this._direction.x = value;
             let deg = this._direction.x == 1 ? 0 : 180;
             this._node.style.transform = `rotateY(${deg}deg)`;

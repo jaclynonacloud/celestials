@@ -56,6 +56,8 @@ namespace celestials.engines {
         private _holdIndex:number; //holds the hold index of a frame
         private _totalIndex:number; //holds the runtime of the sequence
 
+        private _updateRate:number;
+
         private _sequenceCompleteListener:Function;
         private _stateChangeListener:Function;
         private _stateCompleteListener:Function;
@@ -63,10 +65,15 @@ namespace celestials.engines {
         constructor(celestial:Celestial) {
             this._celestial = celestial;
             this.reset();
+
             //look for sequences
             if(this.Data.sequences != null) {
                 this._sequences = this.Data.sequences;
+                this._updateRate = this._sequences.updateRate || 1;
             }
+
+            this._currentState = "";
+            this._lastState = "";
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -77,14 +84,24 @@ namespace celestials.engines {
         }
 
         /**Changes the Celestial's state.  Use the CelestialLogic.State options. */
-        public changeState(state:string=CelestialSequencer.State.Idle) {
+        public changeState(state:string=CelestialSequencer.State.Idle, fallback?:string) {
             //switch out
             if(this._currentState != null)
                 this.completeState();
 
+            this._lastState = this._currentState;
+
+            console.log("TESTING: " + state);
+            console.log(this._sequences[state]);
+            if(this._sequences[state] != null)
+            console.log(this._sequences[state].sequences.length);
+
             //check the state for sequences
-            if(this._sequences[state].sequences.length <= 0)
-                return null; //this state has no sequences
+            if(this._sequences[state] == null ||
+                this._sequences[state].sequences.length <= 0) {
+                if(fallback != null)
+                    return this._changeToFallbackState(fallback); //this state has no sequences
+            }
 
             this._currentState = state;
             //TODO decide a factor for switching sequences
@@ -94,9 +111,10 @@ namespace celestials.engines {
             if(this._stateChangeListener != null)
                 this._stateChangeListener();
 
-            this._lastState = this._currentState;
-
             return this._currentState;
+        }
+        private _changeToFallbackState(state:string) {
+            return this.changeState(state);
         }
 
         /**
@@ -144,6 +162,7 @@ namespace celestials.engines {
 
         /**Changes to the given sequence. */
         public changeSequence(sequence:ICelestialSequence) {
+            if(sequence == null) return;
             this.reset();
             this._currentSequence = sequence;
             console.log("CHANGED SEQUENCE: " + this._currentSequence.name);
@@ -204,40 +223,23 @@ namespace celestials.engines {
 
                     //do testing
                     //test frame hold
-                    if(this._holdIndex > this._currentSequence.frames[this._frameIndex].hold * this._sequences.updateRate) {
+                    if(this._holdIndex > this._currentSequence.frames[this._frameIndex].hold * this._updateRate) {
                         this._frameIndex++;
                         this._holdIndex = 0;
                     }
                     //see if this is a looping sequence
                     if(this._frameIndex > this._currentSequence.frames.length-1) {
-                        if(this._currentSequence.looping && !this.CurrentSequenceSet.runOnce) //just reset the index
+                        if(this._currentSequence.looping && !(this.CurrentSequenceSet.runOnce || true)) //just reset the index
                             this._frameIndex = 0;
                         else //end the sequence
                             this.completeSequence();
                     }
 
                     //see if sequence time is complete
-                    if(this._totalIndex > this._currentSequence.duration * this._sequences.updateRate) {
+                    if(this._totalIndex > this._currentSequence.duration * this._updateRate) {
                         this.completeSequence();
                     }     
-                    
-                    //reset things
-                    // this._celestial.Physics.resetGravity();
-                    //handle state differences
                     resolve();
-
-                    // switch(this._currentState) {
-                    //     case CelestialSequencer.State.Idle:
-                    //         this._handleIdle();
-                    //         break;
-                    //     case CelestialSequencer.State.Walk:
-                    //         this._handleWalk();
-                    //         break;
-                    //     case CelestialSequencer.State.Climb:
-                    //         this._handleClimb();
-                    //         break;
-                    // }
-                    // resolve();
                 }
                 catch(e) {
                     reject(console.log("PROBLEM WITH SEQUENCER ON " + this._celestial.Name + "\n" + e));

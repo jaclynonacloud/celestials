@@ -21,7 +21,6 @@ namespace celestials {
             App._window = win;
             App._node = node;
             App._paused = false;
-            App.setup();
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -86,6 +85,14 @@ namespace celestials {
         
     }
 
+    const _window = (<any>window);
+    async function setupApp() {
+        new App(window, document.querySelector(".screen"));
+        await App.setup();
+        _window.celestials = celestials.managers.CelestialsManager;
+    }
+    setupApp();
 
-    new App(window, document.querySelector(".screen"));
+    
+    
 }
