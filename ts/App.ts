@@ -2,12 +2,10 @@
 ///<reference path="./systems/Debugger.ts" />
 ///<reference path="./managers/CelestialsManager.ts" />
 ///<reference path="./managers/InputManager.ts" />
+///<reference path="./managers/RemoteManager.ts" />
 ///<reference path="./components/ui/CelestialContext.ts" />
+///<reference path="./components/ui/ApplicationContext.ts" />
 namespace celestials {
-    // const path = require('path');
-    // const fs = require('fs');
-    import CC = ui.CelestialContext;
-
     export class App {
         private static _instance:App;
         private static _window:Window;
@@ -15,12 +13,14 @@ namespace celestials {
 
         private static _bounds:Rect;
         private static _paused:boolean;
+        private static _usingRemote:boolean;
 
         constructor(win:Window, node:HTMLElement) {
             App._instance = this;
             App._window = win;
             App._node = node;
             App._paused = false;
+            App._usingRemote = false;
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -28,25 +28,30 @@ namespace celestials {
             console.log("SETUP");
             App._bounds = new Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight);
 
-            //test the context
-            let celContext = new CC(document.querySelector(".context-menu.celestial"));
-            CC.hide();
+            
+
+            //set the contexts
+            new ui.CelestialContext(document.querySelector(".context-menu.celestial"));
+            new ui.ApplicationContext(document.querySelector(".context-menu.application"));
+            
 
             //initialize managers
             let iM = await new managers.InputManager();
-            let cM = await new managers.CelestialsManager();
+            if(this._usingRemote) {
+                await new managers.RemoteManager();
+                await new managers.CelestialsManager(managers.RemoteManager.Files);
+            }
+            else {
+                await new managers.CelestialsManager();
+            }
 
             //initialize systems
             let controls = await new systems.Controls();
             let debug = await new systems.Debugger();
-
-            // console.log("FILES");
-            // console.log(this.read('./'));
-
             
-            // return;
-
             
+            return;
+
             //create update loop
             setInterval(() => {
                 if(App._paused) return;

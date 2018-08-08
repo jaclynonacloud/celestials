@@ -48,7 +48,7 @@ namespace celestials.logic {
          */
         public next() {
             this._tick += this._eagerness;
-            let locAttentionSpan:number = clamp(this._celestial.Sequencer.CurrentSequenceSet.attentionSpan, 1, 100); //attention span from the sequence state type
+            let locAttentionSpan:number = clamp(this._celestial.Sequencer.CurrentSequenceSet.attentionSpan || 100, 1, 100); //attention span from the sequence state type
             let attentionSpan:number = this._attentionSpan * (locAttentionSpan / 100); //attention span of the celestial
             let attention:number = randomRangeInt(this._tick, 100); //a random number -- incremented by the eagerness every time a the state isn't changed
 
@@ -434,7 +434,7 @@ namespace celestials.logic {
                 if(wallHit == Physics.Wall.Left || wallHit == Physics.Wall.Right) {
 
                     //see if we want to climb - uses the attention span of the climb sequence set
-                    if(randomRange(0, 1) > this._celestial.Sequencer.CurrentSequenceSet.attentionSpan / 100) {
+                    if(randomRange(0, 1) > this._celestial.Sequencer.CurrentSequenceSet.attentionSpan || 100 / 100) {
 
                         //get the climb state
                         let state:string = this._celestial.Sequencer.changeState(engines.CelestialSequencer.State.Climb);

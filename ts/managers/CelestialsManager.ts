@@ -15,7 +15,7 @@ namespace celestials.managers{
         private _templates:Celestial[];
         private _celestials:Celestial[];
 
-        constructor() {
+        constructor(files?:string[]) {
             CelestialsManager._instance = this;
             CelestialsManager._lookup = new Dictionary<string, Celestial>();
             CelestialsManager._data = new Dictionary<string, ICelestial>();
@@ -28,17 +28,18 @@ namespace celestials.managers{
             this._celestials = new Array<Celestial>();
 
 
-            this._setup();
+            this._setup(files);
             
         }
 
 
         /*---------------------------------------------- METHODS -------------------------------------*/
-        private async _setup() {
+        private async _setup(files?:string[]) {
             //load files
             //for now, just give the folders
-            let files = [
-                // "./res/celestials/solaris/solaris.json",
+            if(files == null)
+             files = [
+                "./res/celestials/solaris/solaris.json",
                         "./res/celestials/anthony/anthony.json"];
 
             for(const file of files) {
@@ -89,6 +90,12 @@ namespace celestials.managers{
             if(index != -1) {
                 let cel = CelestialsManager._instance._celestials.splice(index, 1)[0];
                 cel.remove();
+            }
+        }
+
+        public static removeAllCelestials() {
+            for(let celestial of CelestialsManager.Celestials) {
+                this.removeCelestial(celestial);
             }
         }
 

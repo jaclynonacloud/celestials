@@ -14,7 +14,7 @@ namespace celestials.engines {
     export interface ICelestialSequenceSet {
         attentionSpan?:number;
         transitionStates:string[]; //holds names to states that can be switched to next /*If none are supplied, the default states will be used.*/
-        special?:boolean; //marks whether a sequence can be randomly selected, or must be called
+        special?:boolean; //marks whether a sequence can be selected, or must be called
         runOnce?:boolean; //marks whether a sequence only runs through its frames once /*Overrides any separate sequence controllers like looping or duration.*/
         sequences:ICelestialSequence[];
     }
@@ -72,8 +72,6 @@ namespace celestials.engines {
                 this._updateRate = this._sequences.updateRate || 1;
             }
 
-            this._currentState = "";
-            this._lastState = "";
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -89,24 +87,16 @@ namespace celestials.engines {
             if(this._currentState != null)
                 this.completeState();
 
-            this._lastState = this._currentState;
+            this._lastState = this._currentState || "";
 
-            console.log("TESTING: " + state);
-            console.log(this._sequences[state]);
-            if(this._sequences[state] != null)
-            console.log(this._sequences[state].sequences.length);
+            //make sure the state has sequences
+            let sequences:ICelestialSequenceSet = (this._sequences[state] != null) ? this._sequences[state].sequences : null;
+            if(sequences == null && fallback != null) return this._changeToFallbackState(fallback);
+            else if(sequences == null && fallback == null) return null;
 
-            //check the state for sequences
-            if(this._sequences[state] == null ||
-                this._sequences[state].sequences.length <= 0) {
-                if(fallback != null)
-                    return this._changeToFallbackState(fallback); //this state has no sequences
-            }
+
 
             this._currentState = state;
-            //TODO decide a factor for switching sequences
-            // let sequence:ICelestialSequence = this.getRandomStateSequence(this._currentState);
-            // this.changeSequence(sequence);
 
             if(this._stateChangeListener != null)
                 this._stateChangeListener();
