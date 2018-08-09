@@ -45,6 +45,9 @@ namespace celestials.systems {
 
             let pauseKey = [Key.Code.p];
             InputManager.addBinding("debug__pauseApp", new KeyBinding(this._togglePause.bind(this), KeyBinding.State.Down, ...pauseKey));
+
+            let controlPanelKey = [Key.Code.c];
+            InputManager.addBinding("debug__openControlPanel", new KeyBinding(this._openControlPanel.bind(this), KeyBinding.State.Down, ...controlPanelKey));
         }
 
 
@@ -106,6 +109,10 @@ namespace celestials.systems {
         private _togglePause() {
             if(App.Paused) App.resume();
             else App.pause();
+        }
+
+        private _openControlPanel() {
+            ui.menus.ControlPanel.show();
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/

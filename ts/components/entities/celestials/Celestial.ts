@@ -1,5 +1,5 @@
 ///<reference path="./../Entity.ts" />
-///<reference path="./../../ui/CelestialOverlay.ts" />
+///<reference path="../../ui/menus/overlays/CelestialOverlay.ts" />
 namespace celestials.entities {
 
     export interface ICelestial extends IEntity {
@@ -28,7 +28,7 @@ namespace celestials.entities {
         private _paused:boolean;
 
         //debug
-        private _overlayMenu:ui.CelestialOverlay;
+        private _overlayMenu:ui.menus.CelestialOverlay;
 
         constructor(node:HTMLElement, container:HTMLElement, json:ICelestial) {
             super(json.name, node, json as any);
@@ -220,7 +220,7 @@ namespace celestials.entities {
                                         .then(() => {
 
                                             //DEBUG: Created a ui menu item to show current controls
-                                            this._overlayMenu = new ui.CelestialOverlay(this);
+                                            this._overlayMenu = new ui.menus.CelestialOverlay(this);
                                             this._node.parentNode.appendChild(this._overlayMenu.Node);
 
                                             resolve();
@@ -320,7 +320,7 @@ namespace celestials.entities {
             e.preventDefault();
             e.stopImmediatePropagation();
             //show context menu
-            ui.CelestialContext.show(this);
+            ui.menus.CelestialContext.show(this);
         }
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
         public get Lookup():string { return this.Data.lookup; }

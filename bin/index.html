@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Celestials</title>
-    <link rel="stylesheet" href="styles/styles.css">
-    <!-- <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script> -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
     <!-- <script src="js/background.js" defer></script> -->
     <script src="js/celestials.js" defer></script>
 </head>
@@ -28,6 +28,94 @@
             <div class="sequence">Name of Sequence</div>
         </div>
         <!-- /Celestial -->
+        <!-- Control Panel -->
+        <div class="overlay-menu control-panel opacity-0">
+            <div class="ui toolbar">
+                <div class="name">Control Panel</div>
+                <div class="ui close" data-tooltip="Close control panel.">&#9587;</div>
+            </div>
+            <!-- Show Toolbar -->
+            <label class="ui toggle-group">
+                <div class="title">Show Toolbar</div>
+                <div class="ui toggle-container">
+                    <input type="checkbox"><span class="slider"></span>
+                </div>
+            </label>
+            <!-- /Show Toolbar -->
+            <!-- Play Sound Effects -->
+            <label class="ui toggle-group">
+                <div class="title">Play Sound Effects</div>
+                <div class="ui toggle-container">
+                    <input type="checkbox"><span class="slider"></span>
+                </div>
+            </label>
+            <!-- /Play Sound Effects -->
+            <!-- Allow Notifications -->
+            <label class="ui toggle-group" data-tooltip="Allows notifications to show.">
+                <div class="title">Allow Notifications</div>
+                <div class="ui toggle-container">
+                    <input type="checkbox"><span class="slider"></span>
+                </div>
+            </label>
+            <!-- /Allow Notifications -->
+            <!-- Allow Moods -->
+            <label class="ui toggle-group" data-tooltip="Allows celestials to be moody.">
+                <div class="title">Allow Moods</div>
+                <div class="ui toggle-container">
+                    <input type="checkbox"><span class="slider"></span>
+                </div>
+            </label>
+            <!-- /Allow Moods -->
+            <!-- Use Weather -->
+            <label class="ui toggle-group" data-tooltip="Allows weather to happen.">
+                <div class="title">Use Weather</div>
+                <div class="ui toggle-container">
+                    <input type="checkbox"><span class="slider"></span>
+                </div>
+            </label>
+            <!-- /Use Weather -->
+            <!-- Developer Mode -->
+            <label class="ui toggle-group" data-tooltip="For developers only!">
+                <div class="title">Developer Mode</div>
+                <div class="ui toggle-container">
+                    <input type="checkbox" data-checkbox="dev-mode"><span class="slider"></span>
+                </div>
+            </label>
+            <!-- /Developer Mode -->
+            <div class="ui toggle-collapsable" data-checkbox-collapse="dev-mode">
+                <!-- Show Console -->
+                <label class="ui toggle-group toggle-group--indented">
+                    <div class="title">Show Console</div>
+                    <div class="ui toggle-container">
+                        <input type="checkbox"><span class="slider"></span>
+                    </div>
+                </label>
+                <!-- /Show Console -->
+                <!-- Show Overlays -->
+                <label class="ui toggle-group toggle-group--indented">
+                    <div class="title">Show Overlays</div>
+                    <div class="ui toggle-container">
+                        <input type="checkbox"><span class="slider"></span>
+                    </div>
+                </label>
+                <!-- /Show Overlays -->  
+            </div>
+            <div class="row ui button">Show Celestial Lineage</div>
+        </div>
+        <!-- /Control Panel -->
+        <!-- Notification Panel -->
+        <div class="overlay-menu notifications-bar">
+            <div class="ui toolbar title"><span>Notifications</span><span class="icon popout pointer" data-tooltip="Pop out notification panel."></span></div>
+            <div class="ui list">
+                <div class="ui item template">
+                    Item
+                </div>
+            </div>
+        </div>
+        <!-- /Notification Panel -->
+        <!-- Tooltip Panel -->
+        <div class="overlay-menu tooltip">Tooltip</div>
+        <!-- /Tooltip Panel -->
         <!-- /Overlay Menus -->
 
         <!-- Context Menus -->

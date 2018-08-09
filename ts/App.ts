@@ -3,8 +3,10 @@
 ///<reference path="./managers/CelestialsManager.ts" />
 ///<reference path="./managers/InputManager.ts" />
 ///<reference path="./managers/RemoteManager.ts" />
-///<reference path="./components/ui/CelestialContext.ts" />
-///<reference path="./components/ui/ApplicationContext.ts" />
+///<reference path="./components/ui/menus/contexts/CelestialContext.ts" />
+///<reference path="./components/ui/menus/contexts/ApplicationContext.ts" />
+///<reference path="./components/ui/menus/statics/ControlPanel.ts" />
+///<reference path="./components/ui/menus/overlays/Tooltip.ts" />
 namespace celestials {
     export class App {
         private static _instance:App;
@@ -20,7 +22,6 @@ namespace celestials {
             App._window = win;
             App._node = node;
             App._paused = false;
-            App._usingRemote = false;
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -31,19 +32,20 @@ namespace celestials {
             
 
             //set the contexts
-            new ui.CelestialContext(document.querySelector(".context-menu.celestial"));
-            new ui.ApplicationContext(document.querySelector(".context-menu.application"));
+            new ui.menus.CelestialContext(document.querySelector(".context-menu.celestial"));
+            new ui.menus.ApplicationContext(document.querySelector(".context-menu.application"));
+            //set the statics
+            new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
+            new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
             
 
             //initialize managers
-            let iM = await new managers.InputManager();
-            if(this._usingRemote) {
-                await new managers.RemoteManager();
-                await new managers.CelestialsManager(managers.RemoteManager.Files);
-            }
-            else {
-                await new managers.CelestialsManager();
-            }
+            await new managers.InputManager();
+            // await new managers.RemoteManager();
+            // await new managers.CelestialsManager(managers.RemoteManager.Files);
+
+            await new managers.CelestialsManager();
+
 
             //initialize systems
             let controls = await new systems.Controls();
