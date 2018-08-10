@@ -5,6 +5,7 @@ namespace celestials.entities {
     export interface ICelestial extends IEntity {
         lookup?:string;
         scale?:{min:number, max:number};
+        maxSpawns?:number;
         icon?:string;
         images?:{name:string, path:string}[];
         spritesheets?:ISpritesheet[];
@@ -29,6 +30,7 @@ namespace celestials.entities {
         private _eventsRegistry:Dictionary<string, any>;
 
         private _paused:boolean;
+        private _isControlled:boolean; //true when user is controlling the celestial, such as dragging \\ limited movements
 
         private _clickListener:Function;
 
@@ -41,6 +43,7 @@ namespace celestials.entities {
             this._mainImage = this._node.querySelector(".main-image");
 
             this._paused = false;
+            this._isControlled = false;
 
             //add name to node
             this._node.dataset.name = this.Name;
@@ -144,6 +147,14 @@ namespace celestials.entities {
                     img.src = data.path + iconSrc;
                 }
             });
+        }
+
+
+        public takeControl() {
+            this._isControlled = true;
+        }
+        public releaseControl() {
+            this._isControlled = false;
         }
 
 
@@ -328,24 +339,23 @@ namespace celestials.entities {
             //update sequence
             // logic > sequencer > draw > physics
             await this._logic.update();
-            // console.log("LOGIC");
-            await this._sequencer.update();
-            // console.log("SEQUENCER");
-            await this.drawCurrentFrame();
-            // console.log("DRAW");
-            await this._physics.update();
-            // console.log("PHYSICS");
+
+            //if we have taken control, only render the first frame
+            if(!this._isControlled) {
+
+                // console.log("LOGIC");
+                await this._sequencer.update();
+                // console.log("SEQUENCER");
+                await this.drawCurrentFrame();
+                // console.log("DRAW");
+                await this._physics.update();
+                // console.log("PHYSICS");
+            }
 
 
             this._overlayMenu.update();
             this._overlayMenu.changeName(this.Name);
             this._overlayMenu.changeSequence(this._sequencer.CurrentSequence.name);
-
-
-            // this._logic.update()
-            //     .then(() => this._sequencer.update())
-            //         .then(() => this.draw(this.getImage(this._sequencer.CurrentFrame.name)))
-            //             .then(img => this._physics.update());
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         private _onSequenceComplete() {
@@ -371,6 +381,7 @@ namespace celestials.entities {
 
 
         private _onClicked(e:MouseEvent) {
+            if(e.button != 0) return;
             if(this._clickListener != null)
                 this._clickListener(this);
         }
@@ -388,6 +399,7 @@ namespace celestials.entities {
         public get Physics():engines.Physics { return this._physics; }
         public get Logic():logic.CelestialLogic { return this._logic; }
         public get Paused():boolean { return this._paused; }
+        public get IsControlled():boolean { return this._isControlled; }
 
         // public get Icon():string {
         //     if(this._imagesLookup.containsKey("icon"))

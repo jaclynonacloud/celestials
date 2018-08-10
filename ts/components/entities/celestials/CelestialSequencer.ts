@@ -10,6 +10,7 @@ namespace celestials.engines {
         hangs?:ICelestialSequenceSet;
         falls?:ICelestialSequenceSet;
         recovers?:ICelestialSequenceSet;
+        holds?:ICelestialSequenceSet;
     }
     export interface ICelestialSequenceSet {
         attentionSpan?:number;
@@ -40,7 +41,8 @@ namespace celestials.engines {
             "Climb" : "climbs",
             "Hang" : "hangs",
             "Fall" : "falls",
-            "Recover" : "recovers"
+            "Recover" : "recovers",
+            "Hold" : "holds"
         });}
         public static get DEFAULT_TRANSITIONAL_STATES():string[] { return ["Idle", "Walk"]; }
 

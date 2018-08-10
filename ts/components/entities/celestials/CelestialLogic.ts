@@ -113,6 +113,7 @@ namespace celestials.logic {
          * @param which The wall that was hit.  Defined by Physics.Wall
          */
         public handleWallHit(which:number) {
+            console.log("HIT WALL CHECK");
              //see if we hit the edges
              this._handleStateIntegrity(which);
             
@@ -326,7 +327,7 @@ namespace celestials.logic {
                 //handle states
                 let state:string = this._celestial.Sequencer.CurrentState;
 
-                //is it real?
+                if(!this._celestial.IsControlled) {
                 //uses the state name to look for a function matching this: _handle[State]
                 let funcName:string = `_handle${state[0].toUpperCase()}${state.substr(1)}`;
                 if(this[funcName] != null)
@@ -335,6 +336,7 @@ namespace celestials.logic {
                 //check state for integrity
                 if(!this._pauseIntegrityCheck)
                     this._handleStateIntegrity();
+                }
 
 
                 resolve();

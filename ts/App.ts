@@ -58,11 +58,12 @@ namespace celestials {
 
             //initialize managers
             await new managers.InputManager();
-            // let celestialsMan = await new managers.RemoteManager();
-            // await celestialsMan.setup(managers.RemoteManager.Files)
-
+            await new managers.RemoteManager();
             let celestialsMan = await new managers.CelestialsManager();
-            await celestialsMan.setup();
+            await celestialsMan.setup(managers.RemoteManager.Files)
+
+            // let celestialsMan = await new managers.CelestialsManager();
+            // await celestialsMan.setup();
             
             
             //test
@@ -73,7 +74,7 @@ namespace celestials {
             let debug = await new systems.Debugger();
             
             
-            return;
+            // return;
 
             //create update loop
             setInterval(() => {

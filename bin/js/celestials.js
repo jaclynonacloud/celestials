@@ -603,6 +603,7 @@ var celestials;
                 _this._container = container;
                 _this._mainImage = _this._node.querySelector(".main-image");
                 _this._paused = false;
+                _this._isControlled = false;
                 _this._node.dataset.name = _this.Name;
                 console.log("Created: " + _this.Name);
                 _this._eventsRegistry = new celestials.Dictionary();
@@ -682,6 +683,12 @@ var celestials;
                             })];
                     });
                 });
+            };
+            Celestial.prototype.takeControl = function () {
+                this._isControlled = true;
+            };
+            Celestial.prototype.releaseControl = function () {
+                this._isControlled = false;
             };
             Celestial.prototype.addClickListener = function (clickListener) {
                 this._clickListener = clickListener;
@@ -810,6 +817,7 @@ var celestials;
                                 return [4, this._logic.update()];
                             case 1:
                                 _a.sent();
+                                if (!!this._isControlled) return [3, 5];
                                 return [4, this._sequencer.update()];
                             case 2:
                                 _a.sent();
@@ -819,6 +827,8 @@ var celestials;
                                 return [4, this._physics.update()];
                             case 4:
                                 _a.sent();
+                                _a.label = 5;
+                            case 5:
                                 this._overlayMenu.update();
                                 this._overlayMenu.changeName(this.Name);
                                 this._overlayMenu.changeSequence(this._sequencer.CurrentSequence.name);
@@ -842,6 +852,8 @@ var celestials;
                 this._logic.handleWallHit(which);
             };
             Celestial.prototype._onClicked = function (e) {
+                if (e.button != 0)
+                    return;
                 if (this._clickListener != null)
                     this._clickListener(this);
             };
@@ -880,10 +892,204 @@ var celestials;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Celestial.prototype, "IsControlled", {
+                get: function () { return this._isControlled; },
+                enumerable: true,
+                configurable: true
+            });
             return Celestial;
         }(entities.Entity));
         entities.Celestial = Celestial;
     })(entities = celestials.entities || (celestials.entities = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
+    var ui;
+    (function (ui) {
+        var components;
+        (function (components) {
+            var List = (function () {
+                function List(node, template, maxItems) {
+                    this._node = node;
+                    this._template = template;
+                    this._maxItems = maxItems || -1;
+                    this._template.classList.add("hide");
+                    this._items = new Array();
+                    this.clear();
+                }
+                List.prototype.createItem = function (bubbleSelect) {
+                    var _this = this;
+                    if (bubbleSelect === void 0) { bubbleSelect = true; }
+                    var item = new Item(this._template.cloneNode(true));
+                    item.Node.classList.remove("template");
+                    item.Node.classList.add("hide");
+                    if (bubbleSelect) {
+                        item.Node.addEventListener("click", function () { return item.select(); });
+                    }
+                    item.addSelectListener(function (selected) {
+                        _this._index = _this._items.indexOf(selected);
+                        if (_this._onSelectCallback != null)
+                            _this._onSelectCallback(_this._index);
+                    });
+                    return item;
+                };
+                List.prototype.addItemToList = function (item) {
+                    item.Node.classList.remove("hide");
+                    this._items.push(item);
+                    if (this._maxItems != -1)
+                        if (this._items.length > this._maxItems)
+                            this.removeItemAt(0);
+                    this._node.appendChild(item.Node);
+                };
+                List.prototype.removeItemAt = function (index) {
+                    var removedItem = this._items.splice(index, 1)[0];
+                    removedItem.Node.remove();
+                    removedItem = null;
+                };
+                List.prototype.clear = function () {
+                    for (var i = this._items.length - 1; i >= 0; i--)
+                        this.removeItemAt(i);
+                };
+                List.prototype.addSelectListener = function (callback) {
+                    this._onSelectCallback = callback;
+                };
+                List.prototype.removeSelectListener = function () {
+                    this._onSelectCallback = null;
+                };
+                Object.defineProperty(List.prototype, "Items", {
+                    get: function () { return this._items; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return List;
+            }());
+            components.List = List;
+            var Item = (function () {
+                function Item(node) {
+                    this._node = node;
+                }
+                Item.prototype.select = function () {
+                    if (this._onSelectCallback != null)
+                        this._onSelectCallback(this);
+                };
+                Item.prototype.wireSelector = function (element) {
+                    var _this = this;
+                    var node = element || this._node;
+                    node.addEventListener("mousedown", function () {
+                        _this.select();
+                    });
+                };
+                Item.prototype.wireSelectEvent = function () {
+                    var _this = this;
+                    this._node.querySelector(".btnDelete").addEventListener("mousedown", function () {
+                        _this.select();
+                    });
+                };
+                Item.prototype.addSelectListener = function (callback) {
+                    this._onSelectCallback = callback;
+                };
+                Item.prototype.removeSelectListener = function () {
+                    this._onSelectCallback = null;
+                };
+                Object.defineProperty(Item.prototype, "Node", {
+                    get: function () { return this._node; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return Item;
+            }());
+            components.Item = Item;
+        })(components = ui.components || (ui.components = {}));
+    })(ui = celestials.ui || (celestials.ui = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
+    var ui;
+    (function (ui) {
+        var menus;
+        (function (menus) {
+            var NotificationBar = (function (_super) {
+                __extends(NotificationBar, _super);
+                function NotificationBar(node, nodeIdle, idleTime) {
+                    var _this = _super.call(this, node, null) || this;
+                    NotificationBar._instance = _this;
+                    _this._itemsList = new ui.components.List(_this._node.querySelector(".list"), _this._node.querySelector(".list .item.template"), 5);
+                    console.log("IDLE");
+                    console.log(nodeIdle);
+                    if (nodeIdle != null) {
+                        console.log("GRUE");
+                        _this._idleTime = idleTime || NotificationBar.DEF_IDLE;
+                        nodeIdle.addEventListener("mouseenter", _this._onIdleEnter.bind(_this));
+                        nodeIdle.addEventListener("mouseleave", _this._onIdleExit.bind(_this));
+                    }
+                    _this._node.addEventListener("mouseenter", function () { return _this._clearDuration(); });
+                    _this._node.addEventListener("mouseleave", function () { return _this._startDurationTimer(NotificationBar.DEF_DURATION); });
+                    return _this;
+                }
+                Object.defineProperty(NotificationBar, "Type", {
+                    get: function () { return Object.freeze({ "Normal": "", "Success": "success", "Fail": "fail", "Notify": "notify" }); },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(NotificationBar, "DEF_IDLE", {
+                    get: function () { return 1000; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(NotificationBar, "DEF_DURATION", {
+                    get: function () { return 3000; },
+                    enumerable: true,
+                    configurable: true
+                });
+                NotificationBar.prototype.show = function () {
+                    _super.prototype.show.call(this);
+                };
+                NotificationBar.addNotification = function (notification, type, clickCallback, duration) {
+                    var item = NotificationBar._instance._itemsList.createItem();
+                    item.Node.innerHTML = notification;
+                    item.Node.classList.add("show");
+                    if (type != null && type != "")
+                        item.Node.classList.add("--" + type);
+                    if (clickCallback != null)
+                        item.addSelectListener(clickCallback);
+                    NotificationBar._instance._itemsList.addItemToList(item);
+                    NotificationBar._instance.show();
+                    NotificationBar._instance._startDurationTimer(duration || notification.length * 0.1 * 1000);
+                    setTimeout(function () { return item.Node.classList.remove("show"); }, 2000);
+                };
+                NotificationBar.clearNotifications = function () {
+                    NotificationBar._instance._itemsList.clear();
+                };
+                NotificationBar.prototype._startDurationTimer = function (duration) {
+                    var _this = this;
+                    this._clearDuration();
+                    this._durationTimer = setTimeout(function () { return _this.hide(); }, duration);
+                };
+                NotificationBar.prototype._clearDuration = function () {
+                    if (this._durationTimer != null)
+                        celestials.App.Window.clearTimeout(this._durationTimer);
+                    this._durationTimer = null;
+                };
+                NotificationBar.prototype._clearIdle = function () {
+                    if (this._idleTimer != null)
+                        celestials.App.Window.clearTimeout(this._idleTimer);
+                    this._idleTimer = null;
+                };
+                NotificationBar.prototype._onIdleEnter = function () {
+                    var _this = this;
+                    if (this._idleTimer != null)
+                        return;
+                    this._idleTimer = setTimeout(function () { return _this.show(); }, this._idleTime);
+                    this._clearDuration();
+                };
+                NotificationBar.prototype._onIdleExit = function () {
+                    this._clearIdle();
+                };
+                return NotificationBar;
+            }(menus.OverlayMenu));
+            menus.NotificationBar = NotificationBar;
+        })(menus = ui.menus || (ui.menus = {}));
+    })(ui = celestials.ui || (celestials.ui = {}));
 })(celestials || (celestials = {}));
 var celestials;
 (function (celestials) {
@@ -1108,25 +1314,28 @@ var celestials;
                 this._templates = new Array();
                 this._celestials = new Array();
                 this._eventRegistry = new celestials.Dictionary();
-                this._eventRegistry.add("celClick", this._onCelestialClick.bind(this));
                 this._eventRegistry.add("celDrag", this._onCelestialDrag.bind(this));
                 this._eventRegistry.add("celDrop", this._onCelestialDrop.bind(this));
-                this._container.addEventListener("mousedown", this._eventRegistry.getValue("celClick"));
+                this._activeCelestial = {
+                    celestial: null,
+                    zIndex: 1
+                };
             }
             CelestialsManager.prototype.setup = function (files) {
                 return __awaiter(this, void 0, void 0, function () {
-                    var _i, files_1, file, _a, _b, temp;
+                    var _i, files_1, file;
                     var _this = this;
-                    return __generator(this, function (_c) {
-                        switch (_c.label) {
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
                             case 0:
                                 if (files == null)
                                     files = [
+                                        "./res/celestials/anthony/anthony.json",
                                         "./res/celestials/solaris/solaris.json",
-                                        "./res/celestials/anthony/anthony.json"
+                                        "./res/celestials/victor/victor.json"
                                     ];
                                 _i = 0, files_1 = files;
-                                _c.label = 1;
+                                _a.label = 1;
                             case 1:
                                 if (!(_i < files_1.length)) return [3, 4];
                                 file = files_1[_i];
@@ -1135,17 +1344,14 @@ var celestials;
                                         CelestialsManager.addTemplate(cel);
                                     })];
                             case 2:
-                                _c.sent();
-                                _c.label = 3;
+                                _a.sent();
+                                _a.label = 3;
                             case 3:
                                 _i++;
                                 return [3, 1];
                             case 4:
-                                for (_a = 0, _b = this._templates; _a < _b.length; _a++) {
-                                    temp = _b[_a];
-                                    CelestialsManager.addCelestial(temp.Lookup);
-                                    console.log("ADDED: " + temp.Name);
-                                }
+                                if (CelestialsManager._lookup.containsKey("solaris"))
+                                    CelestialsManager.addCelestial("solaris");
                                 return [2];
                         }
                     });
@@ -1168,14 +1374,21 @@ var celestials;
                     });
                 });
             };
-            CelestialsManager.addCelestial = function (lookup) {
+            CelestialsManager.addCelestial = function (lookup, addedByLineage) {
                 return __awaiter(this, void 0, void 0, function () {
                     var celestial, data, copy;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
+                                addedByLineage = addedByLineage || false;
                                 celestial = CelestialsManager._lookup.getValue(lookup);
                                 if (!(celestial != null)) return [3, 2];
+                                if (celestial.Data.maxSpawns != null && !addedByLineage) {
+                                    if (CelestialsManager.countCelestials(celestial.Lookup) + 1 > celestial.Data.maxSpawns) {
+                                        celestials.ui.menus.NotificationBar.addNotification("Max spawns reached for " + celestial.Name + ".", celestials.ui.menus.NotificationBar.Type.Fail);
+                                        return [2, null];
+                                    }
+                                }
                                 data = CelestialsManager._data.getValue(lookup);
                                 copy = celestial.clone();
                                 if (!copy.load()) return [3, 2];
@@ -1183,11 +1396,37 @@ var celestials;
                             case 1:
                                 _a.sent();
                                 copy.addClickListener(CelestialsManager._instance._onCelestialClickFromCelestial.bind(this));
-                                _a.label = 2;
-                            case 2: return [2];
+                                return [2, copy];
+                            case 2: return [2, null];
                         }
                     });
                 });
+            };
+            CelestialsManager.addCelestialAtPosition = function (lookup, x, y, addedByLineage) {
+                return __awaiter(this, void 0, void 0, function () {
+                    var celestial;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0: return [4, CelestialsManager.addCelestial(lookup, addedByLineage)];
+                            case 1:
+                                celestial = _a.sent();
+                                if (celestial == null)
+                                    return [2, null];
+                                celestial.X = x;
+                                celestial.Y = y + celestial.Height;
+                                return [2, celestial];
+                        }
+                    });
+                });
+            };
+            CelestialsManager.countCelestials = function (lookup) {
+                var count = 0;
+                for (var _i = 0, _a = CelestialsManager.Celestials; _i < _a.length; _i++) {
+                    var cel = _a[_i];
+                    if (cel.Lookup == lookup)
+                        count++;
+                }
+                return count;
             };
             CelestialsManager.removeCelestial = function (celestial) {
                 var index = CelestialsManager._instance._celestials.indexOf(celestial);
@@ -1208,27 +1447,64 @@ var celestials;
                     if (cel.IsLoaded)
                         cel.update();
                 }
+                if (CelestialsManager._instance._activeCelestial.celestial != null) {
+                    CelestialsManager._instance._activeCelestial.lastX = celestials.App.MousePosition.x;
+                    CelestialsManager._instance._activeCelestial.lastY = celestials.App.MousePosition.y;
+                }
             };
             CelestialsManager.setActiveCelestial = function (celestial) {
                 if (CelestialsManager._instance._celestials.indexOf(celestial) == -1)
                     return;
-                CelestialsManager._instance._activeCelestial = celestial;
+                CelestialsManager._instance._activeCelestial.celestial = celestial;
+            };
+            CelestialsManager.startDrag = function (celestial) {
+                CelestialsManager._instance._onCelestialDrop(null);
+                CelestialsManager.setActiveCelestial(celestial);
+                CelestialsManager._instance._activeCelestial.zIndex = parseInt(celestial.Node.style.zIndex);
+                celestial.Node.style.zIndex = '100';
+                celestial.takeControl();
+                celestials.App.Node.addEventListener("mousemove", CelestialsManager._instance._eventRegistry.getValue("celDrag"));
+                celestials.App.Node.addEventListener("mouseup", CelestialsManager._instance._eventRegistry.getValue("celDrop"));
             };
             CelestialsManager.prototype._onCelestialClickFromCelestial = function (celestial) {
-                CelestialsManager.setActiveCelestial(celestial);
-            };
-            CelestialsManager.prototype._onCelestialClick = function (e) {
-                celestials.App.Node.addEventListener("mousemove", this._eventRegistry.getValue("celDrag"));
-                celestials.App.Node.addEventListener("mouseup", this._eventRegistry.getValue("celDrop"));
+                CelestialsManager.startDrag(celestial);
             };
             CelestialsManager.prototype._onCelestialDrag = function (e) {
-                if (this._activeCelestial == null)
+                if (this._activeCelestial.celestial == null)
                     return;
-                console.log("DRAG : " + this._activeCelestial.Name);
+                var celestial = this._activeCelestial.celestial;
+                celestial.Physics.setGravity(0);
+                console.log("DRAG : " + celestial.Name);
+                var x = e.clientX;
+                var y = e.clientY + (celestial.Height * celestial.RegistrationPoint.y);
+                celestial.X = x;
+                celestial.Y = y;
             };
             CelestialsManager.prototype._onCelestialDrop = function (e) {
                 celestials.App.Node.removeEventListener("mousemove", this._eventRegistry.getValue("celDrag"));
                 celestials.App.Node.removeEventListener("mouseup", this._eventRegistry.getValue("celDrop"));
+                if (this._activeCelestial.celestial != null) {
+                    var celestial = this._activeCelestial.celestial;
+                    celestial.Node.style.zIndex = "" + this._activeCelestial.zIndex;
+                    celestial.Physics.resetGravity();
+                    celestial.releaseControl();
+                    if (e != null) {
+                        console.log("LAST: ", this._activeCelestial.lastX, ", CURR: ", e.clientX);
+                        var flingX = ((e.clientX - (this._activeCelestial.lastX || e.clientX)) / celestials.App.Bounds.Width) * celestials.App.Bounds.Width;
+                        var flingY = ((e.clientY - (this._activeCelestial.lastY || e.clientY)) / celestials.App.Bounds.Height) * celestials.App.Bounds.Height;
+                        console.log("FLING: ", flingX, flingY);
+                        celestial.Physics.zeroVelocity();
+                        celestial.Physics.addForceX(flingX);
+                        celestial.Physics.addForceY(flingY);
+                        if (flingX != 0) {
+                            if (flingX > 0)
+                                celestial.setDirectionX(1);
+                            else
+                                celestial.setDirectionX(-1);
+                        }
+                    }
+                    this._activeCelestial.celestial = null;
+                }
             };
             Object.defineProperty(CelestialsManager, "Template", {
                 get: function () { return CelestialsManager._instance._template; },
@@ -1281,6 +1557,8 @@ var celestials;
                 InputManager.addBinding("debug__pauseApp", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, [void 0, this._togglePause.bind(this), celestials.KeyBinding.State.Down].concat(pauseKey)))());
                 var controlPanelKey = [celestials.Key.Code.c];
                 InputManager.addBinding("debug__openControlPanel", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, [void 0, this._openControlPanel.bind(this), celestials.KeyBinding.State.Down].concat(controlPanelKey)))());
+                var celestialsPanelKey = [celestials.Key.Code.m];
+                InputManager.addBinding("debug__openCelestialsPanel", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, [void 0, this._openCelestialsPanel.bind(this), celestials.KeyBinding.State.Down].concat(celestialsPanelKey)))());
                 var addNotificationKey = [celestials.Key.Code.n];
                 InputManager.addBinding("debug__addNotification", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, [void 0, this._addNotification.bind(this), celestials.KeyBinding.State.Down].concat(addNotificationKey)))());
             }
@@ -1350,6 +1628,9 @@ var celestials;
             Debugger.prototype._openControlPanel = function () {
                 celestials.ui.menus.ControlPanel.show();
             };
+            Debugger.prototype._openCelestialsPanel = function () {
+                celestials.ui.menus.CelestialsPanel.show();
+            };
             Debugger.prototype._addNotification = function () {
                 celestials.ui.menus.NotificationBar.addNotification("This is a test notification!");
             };
@@ -1357,6 +1638,35 @@ var celestials;
         }());
         systems.Debugger = Debugger;
     })(systems = celestials.systems || (celestials.systems = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
+    var managers;
+    (function (managers) {
+        var remote = require("electron").remote;
+        var ipcRenderer = require("electron").ipcRenderer;
+        var RemoteManager = (function () {
+            function RemoteManager() {
+                RemoteManager._instance = this;
+                this._remote = remote.getCurrentWindow();
+                if (this._remote.data != null) {
+                    this._files = this._remote.data.files;
+                }
+                ipcRenderer.on('showControlPanel', this._onShowControlPanel.bind(this));
+            }
+            RemoteManager.prototype._onShowControlPanel = function () {
+                console.log("SHOW THE CONTROL PANEL PLEASE");
+                celestials.ui.menus.ControlPanel.show();
+            };
+            Object.defineProperty(RemoteManager, "Files", {
+                get: function () { return RemoteManager._instance._files; },
+                enumerable: true,
+                configurable: true
+            });
+            return RemoteManager;
+        }());
+        managers.RemoteManager = RemoteManager;
+    })(managers = celestials.managers || (celestials.managers = {}));
 })(celestials || (celestials = {}));
 var celestials;
 (function (celestials) {
@@ -1764,106 +2074,6 @@ var celestials;
     (function (ui) {
         var components;
         (function (components) {
-            var List = (function () {
-                function List(node, template, maxItems) {
-                    this._node = node;
-                    this._template = template;
-                    this._maxItems = maxItems || -1;
-                    this._template.classList.add("hide");
-                    this._items = new Array();
-                    this.clear();
-                }
-                List.prototype.createItem = function (bubbleSelect) {
-                    var _this = this;
-                    if (bubbleSelect === void 0) { bubbleSelect = true; }
-                    var item = new Item(this._template.cloneNode(true));
-                    item.Node.classList.remove("template");
-                    item.Node.classList.add("hide");
-                    if (bubbleSelect) {
-                        item.Node.addEventListener("click", function () { return item.select(); });
-                    }
-                    item.addSelectListener(function (selected) {
-                        _this._index = _this._items.indexOf(selected);
-                        if (_this._onSelectCallback != null)
-                            _this._onSelectCallback(_this._index);
-                    });
-                    return item;
-                };
-                List.prototype.addItemToList = function (item) {
-                    item.Node.classList.remove("hide");
-                    this._items.push(item);
-                    if (this._maxItems != -1)
-                        if (this._items.length > this._maxItems)
-                            this.removeItemAt(0);
-                    this._node.appendChild(item.Node);
-                };
-                List.prototype.removeItemAt = function (index) {
-                    var removedItem = this._items.splice(index, 1)[0];
-                    removedItem.Node.remove();
-                    removedItem = null;
-                };
-                List.prototype.clear = function () {
-                    for (var i = this._items.length - 1; i >= 0; i--)
-                        this.removeItemAt(i);
-                };
-                List.prototype.addSelectListener = function (callback) {
-                    this._onSelectCallback = callback;
-                };
-                List.prototype.removeSelectListener = function () {
-                    this._onSelectCallback = null;
-                };
-                Object.defineProperty(List.prototype, "Items", {
-                    get: function () { return this._items; },
-                    enumerable: true,
-                    configurable: true
-                });
-                return List;
-            }());
-            components.List = List;
-            var Item = (function () {
-                function Item(node) {
-                    this._node = node;
-                }
-                Item.prototype.select = function () {
-                    if (this._onSelectCallback != null)
-                        this._onSelectCallback(this);
-                };
-                Item.prototype.wireSelector = function (element) {
-                    var _this = this;
-                    var node = element || this._node;
-                    node.addEventListener("click", function () {
-                        _this.select();
-                    });
-                };
-                Item.prototype.wireSelectEvent = function () {
-                    var _this = this;
-                    this._node.querySelector(".btnDelete").addEventListener("click", function () {
-                        _this.select();
-                    });
-                };
-                Item.prototype.addSelectListener = function (callback) {
-                    this._onSelectCallback = callback;
-                };
-                Item.prototype.removeSelectListener = function () {
-                    this._onSelectCallback = null;
-                };
-                Object.defineProperty(Item.prototype, "Node", {
-                    get: function () { return this._node; },
-                    enumerable: true,
-                    configurable: true
-                });
-                return Item;
-            }());
-            components.Item = Item;
-        })(components = ui.components || (ui.components = {}));
-    })(ui = celestials.ui || (celestials.ui = {}));
-})(celestials || (celestials = {}));
-var celestials;
-(function (celestials) {
-    var ui;
-    (function (ui) {
-        var components;
-        (function (components) {
             var MultiList = (function (_super) {
                 __extends(MultiList, _super);
                 function MultiList(node, templates, maxItems) {
@@ -1909,174 +2119,6 @@ var celestials;
     })(ui = celestials.ui || (celestials.ui = {}));
 })(celestials || (celestials = {}));
 var celestials;
-(function (celestials_1) {
-    var ui;
-    (function (ui) {
-        var menus;
-        (function (menus) {
-            var CelestialsPanel = (function (_super) {
-                __extends(CelestialsPanel, _super);
-                function CelestialsPanel(node) {
-                    var _this = _super.call(this, node, null) || this;
-                    CelestialsPanel._instance = _this;
-                    CelestialsPanel._celestialsList = new ui.components.MultiList(_this._node.querySelector(".list"), [
-                        { "lookup": "normal", "template": _this._node.querySelector(".item.celestial") },
-                        { "lookup": "locked", "template": _this._node.querySelector(".item.celestial--locked") }
-                    ]);
-                    _this.hide();
-                    return _this;
-                }
-                CelestialsPanel.show = function () {
-                    return __awaiter(this, void 0, void 0, function () {
-                        var celestials, i, _loop_7, _i, celestials_2, cel;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    CelestialsPanel._instance.show();
-                                    CelestialsPanel._celestialsList.clear();
-                                    celestials = celestials_1.managers.CelestialsManager.Templates;
-                                    celestials = celestials.sort(function (a, b) { return a.Lookup[0] < b.Lookup[0] ? -1 : 1; });
-                                    console.log("MAKE THE ICONS");
-                                    i = 0;
-                                    _a.label = 1;
-                                case 1:
-                                    if (!(i < 4)) return [3, 6];
-                                    _loop_7 = function (cel) {
-                                        var locked, item;
-                                        return __generator(this, function (_a) {
-                                            switch (_a.label) {
-                                                case 0:
-                                                    locked = cel.Data.locked || false;
-                                                    item = CelestialsPanel._celestialsList.createItemFromLookup((!locked) ? "normal" : "locked");
-                                                    if (!!locked) return [3, 2];
-                                                    item.Node.querySelector(".name").innerHTML = cel.Lookup;
-                                                    return [4, cel.getIcon()
-                                                            .then(function (src) { return item.Node.querySelector("img").src = src; })];
-                                                case 1:
-                                                    _a.sent();
-                                                    _a.label = 2;
-                                                case 2:
-                                                    CelestialsPanel._celestialsList.addItemToList(item);
-                                                    return [2];
-                                            }
-                                        });
-                                    };
-                                    _i = 0, celestials_2 = celestials;
-                                    _a.label = 2;
-                                case 2:
-                                    if (!(_i < celestials_2.length)) return [3, 5];
-                                    cel = celestials_2[_i];
-                                    return [5, _loop_7(cel)];
-                                case 3:
-                                    _a.sent();
-                                    _a.label = 4;
-                                case 4:
-                                    _i++;
-                                    return [3, 2];
-                                case 5:
-                                    i++;
-                                    return [3, 1];
-                                case 6: return [2];
-                            }
-                        });
-                    });
-                };
-                return CelestialsPanel;
-            }(menus.OverlayMenu));
-            menus.CelestialsPanel = CelestialsPanel;
-        })(menus = ui.menus || (ui.menus = {}));
-    })(ui = celestials_1.ui || (celestials_1.ui = {}));
-})(celestials || (celestials = {}));
-var celestials;
-(function (celestials) {
-    var ui;
-    (function (ui) {
-        var menus;
-        (function (menus) {
-            var NotificationBar = (function (_super) {
-                __extends(NotificationBar, _super);
-                function NotificationBar(node, nodeIdle, idleTime) {
-                    var _this = _super.call(this, node, null) || this;
-                    NotificationBar._instance = _this;
-                    _this._itemsList = new ui.components.List(_this._node.querySelector(".list"), _this._node.querySelector(".list .item.template"), 5);
-                    console.log("IDLE");
-                    console.log(nodeIdle);
-                    if (nodeIdle != null) {
-                        console.log("GRUE");
-                        _this._idleTime = idleTime || NotificationBar.DEF_IDLE;
-                        nodeIdle.addEventListener("mouseenter", _this._onIdleEnter.bind(_this));
-                        nodeIdle.addEventListener("mouseleave", _this._onIdleExit.bind(_this));
-                    }
-                    _this._node.addEventListener("mouseenter", function () { return _this._clearDuration(); });
-                    _this._node.addEventListener("mouseleave", function () { return _this._startDurationTimer(NotificationBar.DEF_DURATION); });
-                    return _this;
-                }
-                Object.defineProperty(NotificationBar, "Type", {
-                    get: function () { return Object.freeze({ "Normal": "", "Success": "success", "Fail": "fail", "Notify": "notify" }); },
-                    enumerable: true,
-                    configurable: true
-                });
-                Object.defineProperty(NotificationBar, "DEF_IDLE", {
-                    get: function () { return 1000; },
-                    enumerable: true,
-                    configurable: true
-                });
-                Object.defineProperty(NotificationBar, "DEF_DURATION", {
-                    get: function () { return 3000; },
-                    enumerable: true,
-                    configurable: true
-                });
-                NotificationBar.prototype.show = function () {
-                    _super.prototype.show.call(this);
-                };
-                NotificationBar.addNotification = function (notification, type, clickCallback, duration) {
-                    var item = NotificationBar._instance._itemsList.createItem();
-                    item.Node.innerHTML = notification;
-                    item.Node.classList.add("show");
-                    if (type != null && type != "")
-                        item.Node.classList.add("--" + type);
-                    if (clickCallback != null)
-                        item.addSelectListener(clickCallback);
-                    NotificationBar._instance._itemsList.addItemToList(item);
-                    NotificationBar._instance.show();
-                    NotificationBar._instance._startDurationTimer(duration || notification.length * 0.1 * 1000);
-                    setTimeout(function () { return item.Node.classList.remove("show"); }, 2000);
-                };
-                NotificationBar.clearNotifications = function () {
-                    NotificationBar._instance._itemsList.clear();
-                };
-                NotificationBar.prototype._startDurationTimer = function (duration) {
-                    var _this = this;
-                    this._clearDuration();
-                    this._durationTimer = setTimeout(function () { return _this.hide(); }, duration);
-                };
-                NotificationBar.prototype._clearDuration = function () {
-                    if (this._durationTimer != null)
-                        celestials.App.Window.clearTimeout(this._durationTimer);
-                    this._durationTimer = null;
-                };
-                NotificationBar.prototype._clearIdle = function () {
-                    if (this._idleTimer != null)
-                        celestials.App.Window.clearTimeout(this._idleTimer);
-                    this._idleTimer = null;
-                };
-                NotificationBar.prototype._onIdleEnter = function () {
-                    var _this = this;
-                    if (this._idleTimer != null)
-                        return;
-                    this._idleTimer = setTimeout(function () { return _this.show(); }, this._idleTime);
-                    this._clearDuration();
-                };
-                NotificationBar.prototype._onIdleExit = function () {
-                    this._clearIdle();
-                };
-                return NotificationBar;
-            }(menus.OverlayMenu));
-            menus.NotificationBar = NotificationBar;
-        })(menus = ui.menus || (ui.menus = {}));
-    })(ui = celestials.ui || (celestials.ui = {}));
-})(celestials || (celestials = {}));
-var celestials;
 (function (celestials) {
     var ui;
     (function (ui) {
@@ -2091,11 +2133,7 @@ var celestials;
                     var tooltips = celestials.App.Node.querySelectorAll("[data-tooltip]");
                     for (var i = 0; i < tooltips.length; i++) {
                         var tooltip = tooltips[i];
-                        _this._tooltips.push(tooltip);
-                        tooltip.addEventListener("mouseenter", _this._onHover.bind(_this));
-                        tooltip.addEventListener("mouseleave", _this._onHoverOut.bind(_this));
-                        console.log("ADDED TO TOOLTIPS");
-                        console.log(tooltip);
+                        Tooltip.addTooltip(tooltip);
                     }
                     Tooltip._instance.hide();
                     return _this;
@@ -2110,6 +2148,17 @@ var celestials;
                     enumerable: true,
                     configurable: true
                 });
+                Tooltip.addTooltip = function (tooltip, text) {
+                    Tooltip._instance._tooltips.push(tooltip);
+                    if (tooltip.dataset.tooltip == null) {
+                        if (text != null)
+                            tooltip.setAttribute('data-tooltip', text);
+                    }
+                    tooltip.addEventListener("mouseenter", Tooltip._instance._onHover.bind(Tooltip._instance));
+                    tooltip.addEventListener("mouseleave", Tooltip._instance._onHoverOut.bind(Tooltip._instance));
+                    console.log("ADDED TO TOOLTIPS");
+                    console.log(tooltip);
+                };
                 Tooltip.showTooltipOnElement = function (text, element, duration) {
                     Tooltip.showTooltip(text, element.offsetLeft, element.offsetTop, duration || Tooltip.DEF_DURATION);
                 };
@@ -2163,6 +2212,113 @@ var celestials;
     })(ui = celestials.ui || (celestials.ui = {}));
 })(celestials || (celestials = {}));
 var celestials;
+(function (celestials_1) {
+    var ui;
+    (function (ui) {
+        var menus;
+        (function (menus) {
+            var CelestialsPanel = (function (_super) {
+                __extends(CelestialsPanel, _super);
+                function CelestialsPanel(node) {
+                    var _this = _super.call(this, node, null) || this;
+                    CelestialsPanel._instance = _this;
+                    _this._node.querySelector(".ui.close").addEventListener("click", function () { return _this.hide(); });
+                    CelestialsPanel._celestialsList = new ui.components.MultiList(_this._node.querySelector(".list"), [
+                        { "lookup": "normal", "template": _this._node.querySelector(".item.celestial") },
+                        { "lookup": "locked", "template": _this._node.querySelector(".item.celestial--locked") }
+                    ]);
+                    _this.hide();
+                    return _this;
+                }
+                CelestialsPanel.show = function () {
+                    return __awaiter(this, void 0, void 0, function () {
+                        var celestials, _loop_7, _i, celestials_2, cel;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    CelestialsPanel._instance.show();
+                                    CelestialsPanel._celestialsList.clear();
+                                    celestials = celestials_1.managers.CelestialsManager.Templates;
+                                    celestials = celestials.sort(function (a, b) {
+                                        var lookup = a.Lookup.localeCompare(b.Lookup);
+                                        if (a.Data.locked && b.Data.locked)
+                                            return lookup;
+                                        if (lookup < 0 && a.Data.locked)
+                                            return 1;
+                                        return lookup;
+                                    });
+                                    console.log("MAKE THE ICONS");
+                                    _loop_7 = function (cel) {
+                                        var locked, item;
+                                        return __generator(this, function (_a) {
+                                            switch (_a.label) {
+                                                case 0:
+                                                    locked = cel.Data.locked || false;
+                                                    item = CelestialsPanel._celestialsList.createItemFromLookup((!locked) ? "normal" : "locked");
+                                                    if (!!locked) return [3, 2];
+                                                    item.Node.querySelector(".name").innerHTML = cel.Lookup;
+                                                    return [4, cel.getIcon()
+                                                            .then(function (src) { return item.Node.querySelector("img").src = src; })];
+                                                case 1:
+                                                    _a.sent();
+                                                    menus.Tooltip.addTooltip(item.Node, "Click to spawn " + cel.Name + "!");
+                                                    item.addSelectListener(CelestialsPanel._instance._onCelestialsItemClicked.bind(CelestialsPanel._instance));
+                                                    item.Node.querySelector("img").ondragstart = function () { return false; };
+                                                    return [3, 3];
+                                                case 2:
+                                                    menus.Tooltip.addTooltip(item.Node, 'This celestial is currently locked.  Be patient!');
+                                                    _a.label = 3;
+                                                case 3:
+                                                    CelestialsPanel._celestialsList.addItemToList(item);
+                                                    return [2];
+                                            }
+                                        });
+                                    };
+                                    _i = 0, celestials_2 = celestials;
+                                    _a.label = 1;
+                                case 1:
+                                    if (!(_i < celestials_2.length)) return [3, 4];
+                                    cel = celestials_2[_i];
+                                    return [5, _loop_7(cel)];
+                                case 2:
+                                    _a.sent();
+                                    _a.label = 3;
+                                case 3:
+                                    _i++;
+                                    return [3, 1];
+                                case 4: return [2];
+                            }
+                        });
+                    });
+                };
+                CelestialsPanel.prototype._createTemplate = function (template) {
+                    return __awaiter(this, void 0, void 0, function () {
+                        var celestial;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0: return [4, celestials_1.managers.CelestialsManager.addCelestialAtPosition(template, celestials_1.App.MousePosition.x, celestials_1.App.MousePosition.y)];
+                                case 1:
+                                    celestial = _a.sent();
+                                    if (celestial == null)
+                                        return [2];
+                                    celestials_1.managers.CelestialsManager.startDrag(celestial);
+                                    return [2];
+                            }
+                        });
+                    });
+                };
+                CelestialsPanel.prototype._onCelestialsItemClicked = function (item) {
+                    console.log("CLICKED");
+                    var template = item.Node.querySelector(".name").innerHTML;
+                    this._createTemplate(template);
+                };
+                return CelestialsPanel;
+            }(menus.OverlayMenu));
+            menus.CelestialsPanel = CelestialsPanel;
+        })(menus = ui.menus || (ui.menus = {}));
+    })(ui = celestials_1.ui || (celestials_1.ui = {}));
+})(celestials || (celestials = {}));
+var celestials;
 (function (celestials) {
     var App = (function () {
         function App(win, node) {
@@ -2195,18 +2351,27 @@ var celestials;
                             return [4, new celestials.managers.InputManager()];
                         case 1:
                             _a.sent();
-                            return [4, new celestials.managers.CelestialsManager()];
+                            return [4, new celestials.managers.RemoteManager()];
                         case 2:
-                            celestialsMan = _a.sent();
-                            return [4, celestialsMan.setup()];
+                            _a.sent();
+                            return [4, new celestials.managers.CelestialsManager()];
                         case 3:
+                            celestialsMan = _a.sent();
+                            return [4, celestialsMan.setup(celestials.managers.RemoteManager.Files)];
+                        case 4:
                             _a.sent();
                             return [4, new celestials.systems.Controls()];
-                        case 4:
+                        case 5:
                             controls = _a.sent();
                             return [4, new celestials.systems.Debugger()];
-                        case 5:
+                        case 6:
                             debug = _a.sent();
+                            setInterval(function () {
+                                if (App._paused)
+                                    return;
+                                celestials.managers.InputManager.update();
+                                celestials.managers.CelestialsManager.update();
+                            }, 1000 / 30);
                             return [2];
                     }
                 });
@@ -2508,6 +2673,7 @@ var celestials;
                 }
             };
             CelestialLogic.prototype.handleWallHit = function (which) {
+                console.log("HIT WALL CHECK");
                 this._handleStateIntegrity(which);
                 if (which == Physics.Wall.Bottom && this._celestial.Sequencer.isCurrentState(celestials.engines.CelestialSequencer.State.Fall)) {
                     console.log("CALLED");
@@ -2683,11 +2849,13 @@ var celestials;
                 var _this = this;
                 return new Promise(function (resolve, reject) {
                     var state = _this._celestial.Sequencer.CurrentState;
-                    var funcName = "_handle" + state[0].toUpperCase() + state.substr(1);
-                    if (_this[funcName] != null)
-                        _this[funcName]();
-                    if (!_this._pauseIntegrityCheck)
-                        _this._handleStateIntegrity();
+                    if (!_this._celestial.IsControlled) {
+                        var funcName = "_handle" + state[0].toUpperCase() + state.substr(1);
+                        if (_this[funcName] != null)
+                            _this[funcName]();
+                        if (!_this._pauseIntegrityCheck)
+                            _this._handleStateIntegrity();
+                    }
                     resolve();
                 });
             };
@@ -2799,7 +2967,8 @@ var celestials;
                         "Climb": "climbs",
                         "Hang": "hangs",
                         "Fall": "falls",
-                        "Recover": "recovers"
+                        "Recover": "recovers",
+                        "Hold": "holds"
                     });
                 },
                 enumerable: true,
