@@ -5,11 +5,14 @@ namespace celestials.entities {
     export interface ICelestial extends IEntity {
         lookup?:string;
         scale?:{min:number, max:number};
+        icon?:string;
         images?:{name:string, path:string}[];
         spritesheets?:ISpritesheet[];
         physics?:engines.IPhysics;
         logic?:logic.ICelestialLogic;
         sequences?:engines.ICelestialSequences;
+
+        locked?:boolean;
     }
     export interface ISpritesheet {
         path?:string;
@@ -26,6 +29,8 @@ namespace celestials.entities {
         private _eventsRegistry:Dictionary<string, any>;
 
         private _paused:boolean;
+
+        private _clickListener:Function;
 
         //debug
         private _overlayMenu:ui.menus.CelestialOverlay;
@@ -46,6 +51,7 @@ namespace celestials.entities {
             this._eventsRegistry.add("stateChange", this._onStateChange.bind(this));
             this._eventsRegistry.add("stateComplete", this._onStateComplete.bind(this));
             this._eventsRegistry.add("wallHit", this._onWallHit.bind(this));
+            this._eventsRegistry.add("click", this._onClicked.bind(this));
             this._eventsRegistry.add("rightClick", this._onRightClicked.bind(this));
         }
 
@@ -105,6 +111,48 @@ namespace celestials.entities {
 
             this._overlayMenu.remove();
         }
+
+
+        public async getIcon():Promise<string> {
+
+            if(this._imagesLookup.containsKey("icon")) {
+                return new Promise<string>((resolve, reject) => resolve(this._imagesLookup.getValue("icon")));
+            }
+
+            let data = this.Data;
+            return new Promise<string>((resolve, reject) => {
+                //load the icon image
+                let iconSrc = data.icon;
+                if(iconSrc == null) {
+                    if(data.images != null) iconSrc = data.images[0].path;
+                    else if(data.spritesheets != null) iconSrc = data.spritesheets[0].path;
+                }
+                //check for icon
+                if(iconSrc != null) {
+                    //go get the images to load
+                    let img = document.createElement("img");
+                    //listen for load
+                    img.onload = () => {
+                        //set the image
+                        console.log("loaded image!");
+                        // imgData.src = img.src;
+                        if(!this.addImage("icon", img.src))
+                            throw new Error(`An image already exists belonging to ${this.Name} - icon.  Please choose a unique name.`);
+                        resolve(img.src);
+                    }
+                    //load the image
+                    img.src = data.path + iconSrc;
+                }
+            });
+        }
+
+
+        public addClickListener(clickListener:Function) {
+            this._clickListener = clickListener;
+        }
+        public removeClickListener() {
+            this._clickListener = null;
+        }
         
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
@@ -131,10 +179,12 @@ namespace celestials.entities {
                             //set the scale
                             this._scale = randomRange(data.scale.min, data.scale.max);
                             // this._scale = 1;
-                            
-    
+
+
                             //iterate through each image
-                            let promises = new Array();
+                            let promises = new Array();                           
+    
+                            
                             if(data.images != null) {
                                 for(let imgData of data.images) {
                                     promises.push(
@@ -231,6 +281,9 @@ namespace celestials.entities {
                                             //create context menu
                                             // ui.CelestialContext.show(this);
                                         });
+
+                                    //fix image problem
+                                    (this._node.querySelector(".graphics") as HTMLElement).ondragstart = function() { return false; }
                                     
             
                                     //wire listeners
@@ -239,7 +292,7 @@ namespace celestials.entities {
                                     this._sequencer.addStateCompleteListener(this._eventsRegistry.getValue("stateComplete"));
                                     this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
                                     //TODO I've setup the click event, don't readd unless removing this one
-                                    this._node.addEventListener("click", () => console.log("I'VE CLICKED: " + this.Name));
+                                    this._node.addEventListener("mousedown", this._eventsRegistry.getValue("click"));
                                     this._node.addEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
                                 });
     
@@ -265,6 +318,7 @@ namespace celestials.entities {
             this._sequencer.removeStateCompleteListener();
             this._physics.removeWallHitListener();
 
+            this._node.removeEventListener("click", this._eventsRegistry.getValue("click"));
             this._node.removeEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
         }
 
@@ -316,6 +370,11 @@ namespace celestials.entities {
         }
 
 
+        private _onClicked(e:MouseEvent) {
+            if(this._clickListener != null)
+                this._clickListener(this);
+        }
+
         private _onRightClicked(e:Event) {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -329,5 +388,13 @@ namespace celestials.entities {
         public get Physics():engines.Physics { return this._physics; }
         public get Logic():logic.CelestialLogic { return this._logic; }
         public get Paused():boolean { return this._paused; }
+
+        // public get Icon():string {
+        //     if(this._imagesLookup.containsKey("icon"))
+        //         return this._imagesLookup.getValue("icon");
+        //     return this._imagesLookup.List[0];
+        // }
+
+        
     }
 }

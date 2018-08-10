@@ -48,6 +48,9 @@ namespace celestials.systems {
 
             let controlPanelKey = [Key.Code.c];
             InputManager.addBinding("debug__openControlPanel", new KeyBinding(this._openControlPanel.bind(this), KeyBinding.State.Down, ...controlPanelKey));
+
+            let addNotificationKey = [Key.Code.n];
+            InputManager.addBinding("debug__addNotification", new KeyBinding(this._addNotification.bind(this), KeyBinding.State.Down, ...addNotificationKey));
         }
 
 
@@ -113,6 +116,10 @@ namespace celestials.systems {
 
         private _openControlPanel() {
             ui.menus.ControlPanel.show();
+        }
+
+        private _addNotification() {
+            ui.menus.NotificationBar.addNotification("This is a test notification!");
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/

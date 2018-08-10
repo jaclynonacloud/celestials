@@ -15,7 +15,12 @@ namespace celestials.managers{
         private _templates:Celestial[];
         private _celestials:Celestial[];
 
-        constructor(files?:string[]) {
+        private _activeCelestial:Celestial;
+        private _activeCelestialZ:number;
+
+        private _eventRegistry:Dictionary<string, any>;
+
+        constructor() {
             CelestialsManager._instance = this;
             CelestialsManager._lookup = new Dictionary<string, Celestial>();
             CelestialsManager._data = new Dictionary<string, ICelestial>();
@@ -27,14 +32,20 @@ namespace celestials.managers{
             this._templates = new Array<Celestial>();
             this._celestials = new Array<Celestial>();
 
+            this._eventRegistry = new Dictionary();
+            this._eventRegistry.add("celClick", this._onCelestialClick.bind(this));
+            this._eventRegistry.add("celDrag", this._onCelestialDrag.bind(this));
+            this._eventRegistry.add("celDrop", this._onCelestialDrop.bind(this));
 
-            this._setup(files);
+
+            //setup listeners
+            this._container.addEventListener("mousedown", this._eventRegistry.getValue("celClick"));
             
         }
 
 
         /*---------------------------------------------- METHODS -------------------------------------*/
-        private async _setup(files?:string[]) {
+        public async setup(files?:string[]) {
             //load files
             //for now, just give the folders
             if(files == null)
@@ -81,8 +92,16 @@ namespace celestials.managers{
                 //TODO create COPY, not just use the template
                 if(copy.load()) {
                     await CelestialsManager._instance._celestials.push(copy);
+                    copy.addClickListener(CelestialsManager._instance._onCelestialClickFromCelestial.bind(this));
+                    return copy;
                 }
             }
+            return null;
+        }
+        public static async addCelestialAtPosition(lookup:string, x:number, y:number) {
+            let celestial:Celestial = await CelestialsManager.addCelestial(lookup);
+            celestial.X = x;
+            celestial.Y = y;
         }
 
         public static removeCelestial(celestial:Celestial) {
@@ -105,9 +124,41 @@ namespace celestials.managers{
             if(cel.IsLoaded)
                 cel.update();
         }
+
+        public static setActiveCelestial(celestial:Celestial) {
+            //must be an active one in the scene
+            if(CelestialsManager._instance._celestials.indexOf(celestial) == -1) return;
+            //otherwise, set it
+            CelestialsManager._instance._activeCelestial = celestial;
+        }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         /*---------------------------------------------- EVENTS --------------------------------------*/
+        private _onCelestialClickFromCelestial(celestial:Celestial) {
+            CelestialsManager.setActiveCelestial(celestial);
+            this._activeCelestialZ = parseInt(celestial.Node.style.zIndex);
+        }
+        private _onCelestialClick(e:MouseEvent) {
+            //setup listeners
+            App.Node.addEventListener("mousemove", this._eventRegistry.getValue("celDrag"));
+            App.Node.addEventListener("mouseup", this._eventRegistry.getValue("celDrop"));
+        }
+        private _onCelestialDrag(e:MouseEvent) {
+            if(this._activeCelestial == null) return;
+            console.log("DRAG : " + this._activeCelestial.Name);
+            //add celestial to top of stack briefly
+            this._activeCelestial.Node.style.zIndex = '100';
+        }
+        private _onCelestialDrop(e:MouseEvent) {
+            //remove listeners
+            App.Node.removeEventListener("mousemove", this._eventRegistry.getValue("celDrag"));
+            App.Node.removeEventListener("mouseup", this._eventRegistry.getValue("celDrop"));
+
+            if(this._activeCelestial != null) {
+                this._activeCelestial.Node.style.zIndex = `${this._activeCelestialZ}`;
+                this._activeCelestial = null;
+            }
+        }
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
         public static get Template():HTMLElement { return CelestialsManager._instance._template; }
         public static get Templates():Celestial[] { return CelestialsManager._instance._templates; }

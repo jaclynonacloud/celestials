@@ -29,7 +29,8 @@
         </div>
         <!-- /Celestial -->
         <!-- Control Panel -->
-        <div class="overlay-menu control-panel opacity-0">
+        <!-- <div class="overlay-menu control-panel opacity-0"> -->
+        <div class="overlay-menu control-panel">
             <div class="ui toolbar">
                 <div class="name">Control Panel</div>
                 <div class="ui close" data-tooltip="Close control panel.">&#9587;</div>
@@ -54,7 +55,7 @@
             <label class="ui toggle-group" data-tooltip="Allows notifications to show.">
                 <div class="title">Allow Notifications</div>
                 <div class="ui toggle-container">
-                    <input type="checkbox"><span class="slider"></span>
+                    <input type="checkbox" data-checkbox="allow-notifications"><span class="slider"></span>
                 </div>
             </label>
             <!-- /Allow Notifications -->
@@ -74,6 +75,14 @@
                 </div>
             </label>
             <!-- /Use Weather -->
+            <!-- Use Day/Night Cycle -->
+            <label class="ui toggle-group" data-tooltip="Use day/night cycle to have celestials sleep.">
+                <div class="title">Use Day/Night Cycle</div>
+                <div class="ui toggle-container">
+                    <input type="checkbox"><span class="slider"></span>
+                </div>
+            </label>
+            <!-- /Use Day/Night Cycle -->
             <!-- Developer Mode -->
             <label class="ui toggle-group" data-tooltip="For developers only!">
                 <div class="title">Developer Mode</div>
@@ -100,7 +109,8 @@
                 </label>
                 <!-- /Show Overlays -->  
             </div>
-            <div class="row ui button">Show Celestial Lineage</div>
+            <div class="row ui button" data-tooltip="Open celestial lineage panel.">Show Celestial Lineage</div>
+            <div class="row ui button" data-tooltip="Open notifications panel.">Show Notifications</div>
         </div>
         <!-- /Control Panel -->
         <!-- Notification Panel -->
@@ -112,10 +122,37 @@
                 </div>
             </div>
         </div>
+        <div class="notifications-bar-bounds"></div><!-- Used to wake up notifications bar if active -->
         <!-- /Notification Panel -->
         <!-- Tooltip Panel -->
         <div class="overlay-menu tooltip">Tooltip</div>
         <!-- /Tooltip Panel -->
+        <!-- Celestials Panel -->
+        <div class="overlay-menu celestials">
+                <div class="ui toolbar">
+                    <div class="name">Celestials</div>
+                    <div class="ui close" data-tooltip="Close celestials panel.">&#9587;</div>
+                </div>
+                <div class="ui list grid">
+                    <div class="ui item celestial template">
+                        <div class="celestial__image">
+                            <img src="res/celestials/solaris/single.png" alt="">
+                        </div>
+                        <div class="celestial__content">
+                            <div class="name">Solaris</div>
+                        </div>
+                    </div>
+                    <div class="ui item celestial celestial--locked template">
+                        <div class="celestial__image">
+                            <img src="res/icons/lock.png" alt="">
+                        </div>
+                        <div class="celestial__content">
+                            ???
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <!-- /Celestials Panel -->
         <!-- /Overlay Menus -->
 
         <!-- Context Menus -->

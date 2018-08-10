@@ -15,6 +15,7 @@
         "attentionSpan" : 60
     },
 
+    "icon" : "solaris_climb.png",
     "images" : [
         {
             "name" : "img0",
