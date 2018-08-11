@@ -7,13 +7,13 @@
     <title>Celestials</title>
     <link rel="stylesheet" href="styles/main.css">
     <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
-    <script src="js/background.js" defer></script>
+    <!-- <script src="js/background.js" defer></script> -->
     <script src="js/celestials.js" defer></script>
 </head>
 <body>
-    <div class="screen">
+    <div class="screen" data-clickable>
         <div class="celestials">
-            <div class="template celestial">
+            <div class="template celestial" data-clickable>
                 <div class="graphics">
                     <img class="main-image" src="" alt="">
                 </div>
@@ -113,7 +113,7 @@
             <div class="row ui button" data-tooltip="Open notifications panel.">Show Notifications</div>
         </div>
         <!-- /Control Panel -->
-        <!-- Notification Panel -->
+        <!-- Notification Bar -->
         <div class="overlay-menu notifications-bar">
             <div class="ui toolbar title"><span>Notifications</span><span class="icon popout pointer" data-tooltip="Pop out notification panel."></span></div>
             <div class="ui list">
@@ -123,6 +123,20 @@
             </div>
         </div>
         <div class="notifications-bar-bounds"></div><!-- Used to wake up notifications bar if active -->
+        <!-- /Notification Bar -->
+        <!-- Notification Panel -->
+        <div class="overlay-menu notifications-panel">
+            <div class="ui toolbar">
+                <div class="name">Notifications</div>
+                <div class="ui close" data-tooltip="Close notifications panel.">&#9587;</div>
+            </div>
+            <div class="ui list">
+                <div class="ui item template">
+                    <span class="message">Item</span>
+                    <span class="time"></span>
+                </div>
+            </div>
+        </div>
         <!-- /Notification Panel -->
         <!-- Tooltip Panel -->
         <div class="overlay-menu tooltip">Tooltip</div>
@@ -134,7 +148,7 @@
                     <div class="ui close" data-tooltip="Close celestials panel.">&#9587;</div>
                 </div>
                 <div class="ui list grid">
-                    <div class="ui item celestial template">
+                    <div class="ui item celestial template" data-clickable>
                         <div class="celestial__image">
                             <img src="res/celestials/solaris/single.png" alt="">
                         </div>
@@ -142,7 +156,7 @@
                             <div class="name">Solaris</div>
                         </div>
                     </div>
-                    <div class="ui item celestial celestial--locked template">
+                    <div class="ui item celestial celestial--locked template" data-clickable>
                         <div class="celestial__image">
                             <img src="res/icons/lock.png" alt="">
                         </div>

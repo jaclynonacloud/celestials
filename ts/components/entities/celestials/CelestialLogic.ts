@@ -36,9 +36,10 @@ namespace celestials.logic {
 
             //check for data
             if(data != null) {
-                if(data.updateRate != null) this._updateRate = clamp(data.updateRate, 1, 1000);
-                if(data.eagerness != null) this._eagerness = clamp(data.eagerness, 1, 100);
-                if(data.attentionSpan != null) this._attentionSpan = clamp(data.attentionSpan, 0, 100);
+                let { updateRate, eagerness, attentionSpan } = data;
+                if(updateRate != null) this._updateRate = clamp(updateRate, 1, 1000);
+                if(eagerness != null) this._eagerness = clamp(eagerness, 1, 100);
+                if(attentionSpan != null) this._attentionSpan = clamp(attentionSpan, 0, 100);
             }
         }
 
@@ -118,7 +119,7 @@ namespace celestials.logic {
              this._handleStateIntegrity(which);
             
             //see if we are hitting the floor from a fall
-            if(which == Physics.Wall.Bottom && this._celestial.Sequencer.isCurrentState(engines.CelestialSequencer.State.Fall)) {
+            if(which == Physics.WALL.Bottom && this._celestial.Sequencer.isCurrentState(engines.CelestialSequencer.State.Fall)) {
                 console.log("CALLED");
                 //look for a recover state
                 let state:string = this._celestial.Sequencer.changeState(engines.CelestialSequencer.State.Recover);
@@ -180,14 +181,14 @@ namespace celestials.logic {
                     //check wall
                     //if we haven't touched a wall, find the closest
                     let lastTouchedWall = this._celestial.Physics.LastTouchedWall;
-                    if(lastTouchedWall != Physics.Wall.Left && lastTouchedWall != Physics.Wall.Right)
-                        lastTouchedWall = (this._celestial.Bounds.Center.x < App.Bounds.Center.x) ? Physics.Wall.Left : Physics.Wall.Right;
+                    if(lastTouchedWall != Physics.WALL.Left && lastTouchedWall != Physics.WALL.Right)
+                        lastTouchedWall = (this._celestial.Bounds.Center.x < App.Bounds.Center.x) ? Physics.WALL.Left : Physics.WALL.Right;
                     switch(lastTouchedWall) {
-                        case Physics.Wall.Left:
+                        case Physics.WALL.Left:
                             this._celestial.Physics.snapToLeft();
                             this._celestial.setDirectionX(-1);
                             break;
-                        case Physics.Wall.Right:
+                        case Physics.WALL.Right:
                             this._celestial.Physics.snapToRight();
                             this._celestial.setDirectionX(1);
                     }
@@ -246,16 +247,16 @@ namespace celestials.logic {
                     //if we touch the roof, try to hang
                     if(this._tryToHang(wallHit)) break;
                     //make sure we are on the wall
-                    if(!this._celestial.Physics.isTouchingWall(Physics.Wall.Left, Physics.Wall.Right)) {
+                    if(!this._celestial.Physics.isTouchingWall(Physics.WALL.Left, Physics.WALL.Right)) {
                         this.nextState();                   
                         break;
                     }
                     //make sure we are facing the right direction
-                    if(this._celestial.Physics.isTouchingWall(Physics.Wall.Left) && this._celestial.Direction.x != -1) {
+                    if(this._celestial.Physics.isTouchingWall(Physics.WALL.Left) && this._celestial.Direction.x != -1) {
                         this.nextState();
                         break;
                     }
-                    if(this._celestial.Physics.isTouchingWall(Physics.Wall.Right) && this._celestial.Direction.x != 1) {
+                    if(this._celestial.Physics.isTouchingWall(Physics.WALL.Right) && this._celestial.Direction.x != 1) {
                         this.nextState();
                         break;
                     }
@@ -263,7 +264,7 @@ namespace celestials.logic {
                 case cs.State.Hang:
                     //flip if we touch a wall
                     if(wallHit != null)
-                        if(wallHit == Physics.Wall.Left || wallHit == Physics.Wall.Right)
+                        if(wallHit == Physics.WALL.Left || wallHit == Physics.WALL.Right)
                             this._celestial.flipX();
                     //make sure we are on the ceiling
                     if(wallHit == null)
@@ -384,11 +385,11 @@ namespace celestials.logic {
             console.log("JUMP OFF WALL!");
             // //jump off wall
             switch(this._celestial.Physics.LastTouchedWall) {
-                case Physics.Wall.Left:
+                case Physics.WALL.Left:
                     this._celestial.Physics.addForceX(randomRange(35, 80));
                     this._celestial.flipX();
                     break;
-                case Physics.Wall.Right:
+                case Physics.WALL.Right:
                     this._celestial.Physics.addForceX(randomRange(-35, -80));
                     this._celestial.flipX();
                     break;
@@ -433,7 +434,7 @@ namespace celestials.logic {
             //if we hit a wall, check if we want to handle it
             if(wallHit != null) {
                 //see if we hit the edges
-                if(wallHit == Physics.Wall.Left || wallHit == Physics.Wall.Right) {
+                if(wallHit == Physics.WALL.Left || wallHit == Physics.WALL.Right) {
 
                     //see if we want to climb - uses the attention span of the climb sequence set
                     if(randomRange(0, 1) > this._celestial.Sequencer.CurrentSequenceSet.attentionSpan || 100 / 100) {
@@ -458,7 +459,7 @@ namespace celestials.logic {
 
         private _tryToHang(wallHit?:number):boolean {
             if(wallHit == null) return false;
-            if(wallHit != Physics.Wall.Top) return false;
+            if(wallHit != Physics.WALL.Top) return false;
             //TODO see if we want to hang
             if(randomRange(0, 1) > 0) {
                 //get the hang state

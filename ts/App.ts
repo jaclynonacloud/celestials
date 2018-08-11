@@ -1,13 +1,16 @@
 ///<reference path="./systems/Controls.ts" />
 ///<reference path="./systems/Debugger.ts" />
+///<reference path="./systems/Notifications.ts" />
 ///<reference path="./managers/CelestialsManager.ts" />
 ///<reference path="./managers/InputManager.ts" />
+///<reference path="./managers/MouseManager.ts" />
 ///<reference path="./managers/RemoteManager.ts" />
 ///<reference path="./components/ui/menus/contexts/CelestialContext.ts" />
 ///<reference path="./components/ui/menus/contexts/ApplicationContext.ts" />
 ///<reference path="./components/ui/menus/statics/ControlPanel.ts" />
 ///<reference path="./components/ui/menus/statics/CelestialsPanel.ts" />
 ///<reference path="./components/ui/menus/statics/NotificationBar.ts" />
+///<reference path="./components/ui/menus/statics/NotificationPanel.ts" />
 ///<reference path="./components/ui/menus/overlays/Tooltip.ts" />
 namespace celestials {
     export class App {
@@ -48,22 +51,24 @@ namespace celestials {
             //set the statics
             new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
             new ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds"));
+            new ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel"));
             new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
             new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
 
             //test
-            ui.menus.NotificationBar.addNotification("This is a test!", ui.menus.NotificationBar.Type.Notify);
-            ui.menus.NotificationBar.addNotification("This is a test for failure!", ui.menus.NotificationBar.Type.Fail);
+            systems.Notifications.addNotification("This is a test!", systems.Notifications.TYPE.Notify);
+            systems.Notifications.addNotification("This is a test for failure!", systems.Notifications.TYPE.Fail);
             
 
             //initialize managers
+            await new managers.MouseManager();
             await new managers.InputManager();
-            await new managers.RemoteManager();
-            let celestialsMan = await new managers.CelestialsManager();
-            await celestialsMan.setup(managers.RemoteManager.Files)
-
+            // await new managers.RemoteManager();
             // let celestialsMan = await new managers.CelestialsManager();
-            // await celestialsMan.setup();
+            // await celestialsMan.setup(managers.RemoteManager.Files)
+
+            let celestialsMan = await new managers.CelestialsManager();
+            await celestialsMan.setup();
             
             
             //test
@@ -114,6 +119,7 @@ namespace celestials {
 
         
     }
+
 
     const _window = (<any>window);
     async function setupApp() {

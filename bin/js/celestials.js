@@ -75,6 +75,10 @@ var celestials;
                     binding.update();
                 }
             };
+            InputManager.prototype._onMouseDown = function (e) {
+                console.log("CLICKED GLOBAL: ");
+                console.log(e.target);
+            };
             Object.defineProperty(InputManager, "Bindings", {
                 get: function () { return InputManager._bindings; },
                 enumerable: true,
@@ -611,7 +615,6 @@ var celestials;
                 _this._eventsRegistry.add("stateChange", _this._onStateChange.bind(_this));
                 _this._eventsRegistry.add("stateComplete", _this._onStateComplete.bind(_this));
                 _this._eventsRegistry.add("wallHit", _this._onWallHit.bind(_this));
-                _this._eventsRegistry.add("click", _this._onClicked.bind(_this));
                 _this._eventsRegistry.add("rightClick", _this._onRightClicked.bind(_this));
                 return _this;
             }
@@ -689,12 +692,6 @@ var celestials;
             };
             Celestial.prototype.releaseControl = function () {
                 this._isControlled = false;
-            };
-            Celestial.prototype.addClickListener = function (clickListener) {
-                this._clickListener = clickListener;
-            };
-            Celestial.prototype.removeClickListener = function () {
-                this._clickListener = null;
             };
             Celestial.prototype.clone = function () {
                 var clone = new Celestial(celestials.managers.CelestialsManager.Template, this._container, JSON.parse(JSON.stringify(this._data)));
@@ -789,8 +786,7 @@ var celestials;
                                 _this._sequencer.addStateChangeListener(_this._eventsRegistry.getValue("stateChange"));
                                 _this._sequencer.addStateCompleteListener(_this._eventsRegistry.getValue("stateComplete"));
                                 _this._physics.addWallHitListener(_this._eventsRegistry.getValue("wallHit"));
-                                _this._node.addEventListener("mousedown", _this._eventsRegistry.getValue("click"));
-                                _this._node.addEventListener("contextmenu", _this._eventsRegistry.getValue("rightClick"));
+                                celestials.managers.MouseManager.listenForDrag(_this._node, function (x, y) { return celestials.managers.CelestialsManager.onGrab(_this, x, y); }, function (x, y) { return celestials.managers.CelestialsManager.onDrag(_this, x, y); }, function (x, y) { return celestials.managers.CelestialsManager.onDrop(_this, x, y); });
                             });
                         });
                     }
@@ -850,12 +846,6 @@ var celestials;
             Celestial.prototype._onWallHit = function (which) {
                 console.log("Hit wall " + which);
                 this._logic.handleWallHit(which);
-            };
-            Celestial.prototype._onClicked = function (e) {
-                if (e.button != 0)
-                    return;
-                if (this._clickListener != null)
-                    this._clickListener(this);
             };
             Celestial.prototype._onRightClicked = function (e) {
                 e.preventDefault();
@@ -917,10 +907,10 @@ var celestials;
                     this._items = new Array();
                     this.clear();
                 }
-                List.prototype.createItem = function (bubbleSelect) {
+                List.prototype.createItem = function (itemNode, bubbleSelect) {
                     var _this = this;
                     if (bubbleSelect === void 0) { bubbleSelect = true; }
-                    var item = new Item(this._template.cloneNode(true));
+                    var item = new Item(itemNode || this._template.cloneNode(true));
                     item.Node.classList.remove("template");
                     item.Node.classList.add("hide");
                     if (bubbleSelect) {
@@ -1004,6 +994,96 @@ var celestials;
 })(celestials || (celestials = {}));
 var celestials;
 (function (celestials) {
+    var systems;
+    (function (systems) {
+        var Notifications = (function () {
+            function Notifications() {
+            }
+            Object.defineProperty(Notifications, "TYPE", {
+                get: function () { return Object.freeze({ "Normal": "", "Success": "success", "Fail": "fail", "Notify": "notify" }); },
+                enumerable: true,
+                configurable: true
+            });
+            Notifications.addNotification = function (message, type, date, clickHandler) {
+                Notifications.Instance._notifications.push({
+                    message: message,
+                    type: type,
+                    date: date || new Date(),
+                    clickHandler: clickHandler
+                });
+                celestials.ui.menus.NotificationBar.addNotification(message, type, clickHandler);
+            };
+            Notifications.removeNotification = function (index) {
+                Notifications.Instance._notifications.splice(index, 1);
+            };
+            Object.defineProperty(Notifications, "Instance", {
+                get: function () {
+                    if (Notifications._instance == null) {
+                        Notifications._instance = new Notifications();
+                        Notifications._instance._notifications = new Array();
+                    }
+                    return Notifications._instance;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Notifications, "Notifications", {
+                get: function () { return Notifications.Instance._notifications; },
+                enumerable: true,
+                configurable: true
+            });
+            return Notifications;
+        }());
+        systems.Notifications = Notifications;
+    })(systems = celestials.systems || (celestials.systems = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
+    var ui;
+    (function (ui) {
+        var menus;
+        (function (menus) {
+            var NotificationPanel = (function (_super) {
+                __extends(NotificationPanel, _super);
+                function NotificationPanel(node) {
+                    var _this = _super.call(this, node, null) || this;
+                    NotificationPanel._instance = _this;
+                    _this._node.querySelector(".ui.close").addEventListener("click", function () { return NotificationPanel._instance.hide(); });
+                    _this._itemsList = new ui.components.List(_this._node.querySelector(".list"), _this._node.querySelector(".list .item.template"));
+                    _this.hide();
+                    return _this;
+                }
+                NotificationPanel.show = function () {
+                    NotificationPanel._instance.show();
+                    NotificationPanel.update();
+                };
+                NotificationPanel.update = function () {
+                    var itemsList = NotificationPanel._instance._itemsList;
+                    itemsList.clear();
+                    var notifications = celestials.systems.Notifications.Notifications;
+                    for (var i = notifications.length - 1; i >= 0; i--) {
+                        var itemData = notifications[i];
+                        var item = itemsList.createItem();
+                        item.Node.classList.add("--" + itemData.type);
+                        item.Node.querySelector(".message").innerHTML = itemData.message;
+                        if (itemData.clickHandler != null) {
+                            item.Node.style.cursor = 'pointer';
+                            item.addSelectListener(itemData.clickHandler);
+                        }
+                        var timeNode = item.Node.querySelector(".time");
+                        var dateOptions = { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+                        timeNode.innerHTML = itemData.date.toLocaleDateString('us-EN', dateOptions);
+                        itemsList.addItemToList(item);
+                    }
+                };
+                return NotificationPanel;
+            }(menus.OverlayMenu));
+            menus.NotificationPanel = NotificationPanel;
+        })(menus = ui.menus || (ui.menus = {}));
+    })(ui = celestials.ui || (celestials.ui = {}));
+})(celestials || (celestials = {}));
+var celestials;
+(function (celestials) {
     var ui;
     (function (ui) {
         var menus;
@@ -1013,6 +1093,12 @@ var celestials;
                 function NotificationBar(node, nodeIdle, idleTime) {
                     var _this = _super.call(this, node, null) || this;
                     NotificationBar._instance = _this;
+                    _this._node.querySelector(".popout").addEventListener("click", function () {
+                        _this._clearIdle();
+                        _this._clearDuration();
+                        _this.hide();
+                        menus.NotificationPanel.show();
+                    });
                     _this._itemsList = new ui.components.List(_this._node.querySelector(".list"), _this._node.querySelector(".list .item.template"), 5);
                     console.log("IDLE");
                     console.log(nodeIdle);
@@ -1026,11 +1112,6 @@ var celestials;
                     _this._node.addEventListener("mouseleave", function () { return _this._startDurationTimer(NotificationBar.DEF_DURATION); });
                     return _this;
                 }
-                Object.defineProperty(NotificationBar, "Type", {
-                    get: function () { return Object.freeze({ "Normal": "", "Success": "success", "Fail": "fail", "Notify": "notify" }); },
-                    enumerable: true,
-                    configurable: true
-                });
                 Object.defineProperty(NotificationBar, "DEF_IDLE", {
                     get: function () { return 1000; },
                     enumerable: true,
@@ -1041,8 +1122,8 @@ var celestials;
                     enumerable: true,
                     configurable: true
                 });
-                NotificationBar.prototype.show = function () {
-                    _super.prototype.show.call(this);
+                NotificationBar.show = function () {
+                    NotificationBar._instance.show();
                 };
                 NotificationBar.addNotification = function (notification, type, clickCallback, duration) {
                     var item = NotificationBar._instance._itemsList.createItem();
@@ -1050,11 +1131,14 @@ var celestials;
                     item.Node.classList.add("show");
                     if (type != null && type != "")
                         item.Node.classList.add("--" + type);
-                    if (clickCallback != null)
+                    if (clickCallback != null) {
+                        item.Node.style.cursor = 'pointer';
                         item.addSelectListener(clickCallback);
+                    }
                     NotificationBar._instance._itemsList.addItemToList(item);
                     NotificationBar._instance.show();
                     NotificationBar._instance._startDurationTimer(duration || notification.length * 0.1 * 1000);
+                    menus.NotificationPanel.update();
                     setTimeout(function () { return item.Node.classList.remove("show"); }, 2000);
                 };
                 NotificationBar.clearNotifications = function () {
@@ -1085,6 +1169,11 @@ var celestials;
                 NotificationBar.prototype._onIdleExit = function () {
                     this._clearIdle();
                 };
+                Object.defineProperty(NotificationBar, "Items", {
+                    get: function () { return NotificationBar._instance._itemsList.Items; },
+                    enumerable: true,
+                    configurable: true
+                });
                 return NotificationBar;
             }(menus.OverlayMenu));
             menus.NotificationBar = NotificationBar;
@@ -1313,13 +1402,6 @@ var celestials;
                 this._container = document.querySelector(".celestials");
                 this._templates = new Array();
                 this._celestials = new Array();
-                this._eventRegistry = new celestials.Dictionary();
-                this._eventRegistry.add("celDrag", this._onCelestialDrag.bind(this));
-                this._eventRegistry.add("celDrop", this._onCelestialDrop.bind(this));
-                this._activeCelestial = {
-                    celestial: null,
-                    zIndex: 1
-                };
             }
             CelestialsManager.prototype.setup = function (files) {
                 return __awaiter(this, void 0, void 0, function () {
@@ -1385,7 +1467,7 @@ var celestials;
                                 if (!(celestial != null)) return [3, 2];
                                 if (celestial.Data.maxSpawns != null && !addedByLineage) {
                                     if (CelestialsManager.countCelestials(celestial.Lookup) + 1 > celestial.Data.maxSpawns) {
-                                        celestials.ui.menus.NotificationBar.addNotification("Max spawns reached for " + celestial.Name + ".", celestials.ui.menus.NotificationBar.Type.Fail);
+                                        celestials.systems.Notifications.addNotification("Max spawns reached for " + celestial.Name + ".", celestials.systems.Notifications.TYPE.Fail);
                                         return [2, null];
                                     }
                                 }
@@ -1395,7 +1477,6 @@ var celestials;
                                 return [4, CelestialsManager._instance._celestials.push(copy)];
                             case 1:
                                 _a.sent();
-                                copy.addClickListener(CelestialsManager._instance._onCelestialClickFromCelestial.bind(this));
                                 return [2, copy];
                             case 2: return [2, null];
                         }
@@ -1447,63 +1528,37 @@ var celestials;
                     if (cel.IsLoaded)
                         cel.update();
                 }
-                if (CelestialsManager._instance._activeCelestial.celestial != null) {
-                    CelestialsManager._instance._activeCelestial.lastX = celestials.App.MousePosition.x;
-                    CelestialsManager._instance._activeCelestial.lastY = celestials.App.MousePosition.y;
-                }
             };
-            CelestialsManager.setActiveCelestial = function (celestial) {
-                if (CelestialsManager._instance._celestials.indexOf(celestial) == -1)
-                    return;
-                CelestialsManager._instance._activeCelestial.celestial = celestial;
+            CelestialsManager.onGrab = function (cel, x, y) {
+                console.log("GRABBED");
+                cel.Node.style.zIndex = '100';
+                cel.takeControl();
+                cel.Physics.zeroVelocity();
             };
-            CelestialsManager.startDrag = function (celestial) {
-                CelestialsManager._instance._onCelestialDrop(null);
-                CelestialsManager.setActiveCelestial(celestial);
-                CelestialsManager._instance._activeCelestial.zIndex = parseInt(celestial.Node.style.zIndex);
-                celestial.Node.style.zIndex = '100';
-                celestial.takeControl();
-                celestials.App.Node.addEventListener("mousemove", CelestialsManager._instance._eventRegistry.getValue("celDrag"));
-                celestials.App.Node.addEventListener("mouseup", CelestialsManager._instance._eventRegistry.getValue("celDrop"));
+            CelestialsManager.onDrag = function (cel, x, y) {
+                console.log(cel.Name);
+                console.log("DRAGGING: ", x, y);
+                x = x;
+                y += (cel.Height * cel.RegistrationPoint.y);
+                cel.X = x;
+                cel.Y = y;
             };
-            CelestialsManager.prototype._onCelestialClickFromCelestial = function (celestial) {
-                CelestialsManager.startDrag(celestial);
-            };
-            CelestialsManager.prototype._onCelestialDrag = function (e) {
-                if (this._activeCelestial.celestial == null)
-                    return;
-                var celestial = this._activeCelestial.celestial;
-                celestial.Physics.setGravity(0);
-                console.log("DRAG : " + celestial.Name);
-                var x = e.clientX;
-                var y = e.clientY + (celestial.Height * celestial.RegistrationPoint.y);
-                celestial.X = x;
-                celestial.Y = y;
-            };
-            CelestialsManager.prototype._onCelestialDrop = function (e) {
-                celestials.App.Node.removeEventListener("mousemove", this._eventRegistry.getValue("celDrag"));
-                celestials.App.Node.removeEventListener("mouseup", this._eventRegistry.getValue("celDrop"));
-                if (this._activeCelestial.celestial != null) {
-                    var celestial = this._activeCelestial.celestial;
-                    celestial.Node.style.zIndex = "" + this._activeCelestial.zIndex;
-                    celestial.Physics.resetGravity();
-                    celestial.releaseControl();
-                    if (e != null) {
-                        console.log("LAST: ", this._activeCelestial.lastX, ", CURR: ", e.clientX);
-                        var flingX = ((e.clientX - (this._activeCelestial.lastX || e.clientX)) / celestials.App.Bounds.Width) * celestials.App.Bounds.Width;
-                        var flingY = ((e.clientY - (this._activeCelestial.lastY || e.clientY)) / celestials.App.Bounds.Height) * celestials.App.Bounds.Height;
-                        console.log("FLING: ", flingX, flingY);
-                        celestial.Physics.zeroVelocity();
-                        celestial.Physics.addForceX(flingX);
-                        celestial.Physics.addForceY(flingY);
-                        if (flingX != 0) {
-                            if (flingX > 0)
-                                celestial.setDirectionX(1);
-                            else
-                                celestial.setDirectionX(-1);
-                        }
-                    }
-                    this._activeCelestial.celestial = null;
+            CelestialsManager.onDrop = function (cel, x, y) {
+                console.log("DROPPED");
+                cel.releaseControl();
+                cel.Physics.resetGravity();
+                cel.Node.style.zIndex = "" + (cel.Data.zIndex || 1);
+                var _a = managers.MouseManager.LastMousePosition, lastX = _a.x, lastY = _a.y;
+                var flingX = ((x - lastX) / celestials.App.Bounds.Width) * celestials.App.Bounds.Width;
+                var flingY = ((y - lastY) / celestials.App.Bounds.Height) * celestials.App.Bounds.Height;
+                cel.Physics.zeroVelocity();
+                cel.Physics.addForceX(flingX);
+                cel.Physics.addForceY(flingY);
+                if (flingX != 0) {
+                    if (flingX > 0)
+                        cel.setDirectionX(1);
+                    else
+                        cel.setDirectionX(-1);
                 }
             };
             Object.defineProperty(CelestialsManager, "Template", {
@@ -1559,6 +1614,8 @@ var celestials;
                 InputManager.addBinding("debug__openControlPanel", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, [void 0, this._openControlPanel.bind(this), celestials.KeyBinding.State.Down].concat(controlPanelKey)))());
                 var celestialsPanelKey = [celestials.Key.Code.m];
                 InputManager.addBinding("debug__openCelestialsPanel", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, [void 0, this._openCelestialsPanel.bind(this), celestials.KeyBinding.State.Down].concat(celestialsPanelKey)))());
+                var notificationPanelKey = [celestials.Key.Code.j];
+                InputManager.addBinding("debug__showNotificationPanel", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, [void 0, this._openNotificationPanel.bind(this), celestials.KeyBinding.State.Down].concat(notificationPanelKey)))());
                 var addNotificationKey = [celestials.Key.Code.n];
                 InputManager.addBinding("debug__addNotification", new (celestials.KeyBinding.bind.apply(celestials.KeyBinding, [void 0, this._addNotification.bind(this), celestials.KeyBinding.State.Down].concat(addNotificationKey)))());
             }
@@ -1631,8 +1688,11 @@ var celestials;
             Debugger.prototype._openCelestialsPanel = function () {
                 celestials.ui.menus.CelestialsPanel.show();
             };
+            Debugger.prototype._openNotificationPanel = function () {
+                celestials.ui.menus.NotificationPanel.show();
+            };
             Debugger.prototype._addNotification = function () {
-                celestials.ui.menus.NotificationBar.addNotification("This is a test notification!");
+                systems.Notifications.addNotification("This is a test notification!");
             };
             return Debugger;
         }());
@@ -1643,29 +1703,100 @@ var celestials;
 (function (celestials) {
     var managers;
     (function (managers) {
-        var remote = require("electron").remote;
-        var ipcRenderer = require("electron").ipcRenderer;
-        var RemoteManager = (function () {
-            function RemoteManager() {
-                RemoteManager._instance = this;
-                this._remote = remote.getCurrentWindow();
-                if (this._remote.data != null) {
-                    this._files = this._remote.data.files;
-                }
-                ipcRenderer.on('showControlPanel', this._onShowControlPanel.bind(this));
+        var MouseManager = (function () {
+            function MouseManager() {
+                MouseManager._mousePosition = { x: 0, y: 0 };
+                MouseManager._lastMousePosition = { x: 0, y: 0 };
+                MouseManager._mousedownRegistry = new celestials.Dictionary();
+                MouseManager._mouseupRegistry = new celestials.Dictionary();
+                MouseManager._rightClickRegistry = new celestials.Dictionary();
+                MouseManager._dragRegistry = new celestials.Dictionary();
+                celestials.App.Node.addEventListener("mousedown", this._onMouseDown.bind(this));
+                celestials.App.Node.addEventListener("contextmenu", this._onRightClick.bind(this));
+                celestials.App.Node.addEventListener("mousemove", this._onMouseMove.bind(this));
+                celestials.App.Node.addEventListener("mouseup", this._onMouseUp.bind(this));
             }
-            RemoteManager.prototype._onShowControlPanel = function () {
-                console.log("SHOW THE CONTROL PANEL PLEASE");
-                celestials.ui.menus.ControlPanel.show();
+            MouseManager.listenForMouseDown = function (node, callback) {
+                MouseManager._mousedownRegistry.add(node, callback);
             };
-            Object.defineProperty(RemoteManager, "Files", {
-                get: function () { return RemoteManager._instance._files; },
+            MouseManager.listenForMouseUp = function (node, callback) {
+                MouseManager._mouseupRegistry.add(node, callback);
+            };
+            MouseManager.listenForRightClick = function (node, callback) {
+                MouseManager._rightClickRegistry.add(node, callback);
+            };
+            MouseManager.listenForDrag = function (node, grabFunction, dragFunction, dropFunction) {
+                MouseManager._dragRegistry.add(node, { grabFunction: grabFunction, dragFunction: dragFunction, dropFunction: dropFunction });
+            };
+            MouseManager.startDrag = function (node) {
+                MouseManager._activeElement = node;
+            };
+            MouseManager.prototype._onMouseDown = function (e) {
+                if (e.button != 0)
+                    return;
+                var target = e.target.closest("[data-clickable]");
+                if (target == null)
+                    return;
+                console.log("CLICKED GLOBAL: ");
+                console.log(target);
+                if (MouseManager._dragRegistry.containsKey(target)) {
+                    var grabFunction = MouseManager._dragRegistry.getValue(target).grabFunction;
+                    if (grabFunction != null)
+                        grabFunction(e.clientX, e.clientY);
+                    MouseManager._activeElement = target;
+                    return;
+                }
+                if (MouseManager._mousedownRegistry.containsKey(target))
+                    MouseManager._mousedownRegistry.getValue(target)();
+            };
+            MouseManager.prototype._onRightClick = function (e) {
+                var target = e.target.closest("[data-clickable]");
+                if (target == null)
+                    return;
+                if (MouseManager._rightClickRegistry.containsKey(target))
+                    MouseManager._rightClickRegistry.getValue(target)(e.clientX, e.clientY);
+            };
+            MouseManager.prototype._onMouseMove = function (e) {
+                MouseManager._lastMousePosition = MouseManager._mousePosition;
+                MouseManager._mousePosition = { x: e.clientX, y: e.clientY };
+                if (MouseManager._activeElement != null) {
+                    console.log("I WANT TO DRAG");
+                    if (MouseManager._dragRegistry.containsKey(MouseManager._activeElement)) {
+                        var dragFunction = MouseManager._dragRegistry.getValue(MouseManager._activeElement).dragFunction;
+                        if (dragFunction != null)
+                            dragFunction(e.clientX, e.clientY);
+                    }
+                }
+            };
+            MouseManager.prototype._onMouseUp = function (e) {
+                var target = e.target.closest("[data-clickable]");
+                if (target == null)
+                    return;
+                if (MouseManager._activeElement != null) {
+                    if (MouseManager._dragRegistry.containsKey(MouseManager._activeElement)) {
+                        var dropFunction = MouseManager._dragRegistry.getValue(MouseManager._activeElement).dropFunction;
+                        if (dropFunction != null)
+                            dropFunction(e.clientX, e.clientY);
+                        MouseManager._activeElement = null;
+                        return;
+                    }
+                }
+                if (MouseManager._mousedownRegistry.containsKey(target))
+                    MouseManager._mousedownRegistry.getValue(target)(e.clientX, e.clientY);
+            };
+            Object.defineProperty(MouseManager, "MousePosition", {
+                get: function () { return MouseManager._mousePosition; },
                 enumerable: true,
                 configurable: true
             });
-            return RemoteManager;
+            Object.defineProperty(MouseManager, "LastMousePosition", {
+                get: function () { return MouseManager._lastMousePosition; },
+                enumerable: true,
+                configurable: true
+            });
+            return MouseManager;
         }());
-        managers.RemoteManager = RemoteManager;
+        managers.MouseManager = MouseManager;
     })(managers = celestials.managers || (celestials.managers = {}));
 })(celestials || (celestials = {}));
 var celestials;
@@ -2057,7 +2188,7 @@ var celestials;
                 };
                 ControlPanel.prototype._onAllowNotifications = function (checked) {
                     if (checked)
-                        menus.NotificationBar.addNotification("Turned on notifications!", menus.NotificationBar.Type.Notify);
+                        celestials.systems.Notifications.addNotification("Turned on notifications!", celestials.systems.Notifications.TYPE.Notify, null, function () { return ControlPanel.show(); });
                 };
                 ControlPanel.prototype._onDevMode = function (checked) {
                     console.log("DEV MODE: " + checked);
@@ -2262,7 +2393,7 @@ var celestials;
                                                 case 1:
                                                     _a.sent();
                                                     menus.Tooltip.addTooltip(item.Node, "Click to spawn " + cel.Name + "!");
-                                                    item.addSelectListener(CelestialsPanel._instance._onCelestialsItemClicked.bind(CelestialsPanel._instance));
+                                                    celestials_1.managers.MouseManager.listenForMouseDown(item.Node, function (x, y) { return CelestialsPanel._instance._onCelestialsItemClicked(item, x, y); });
                                                     item.Node.querySelector("img").ondragstart = function () { return false; };
                                                     return [3, 3];
                                                 case 2:
@@ -2291,26 +2422,25 @@ var celestials;
                         });
                     });
                 };
-                CelestialsPanel.prototype._createTemplate = function (template) {
+                CelestialsPanel.prototype._onCelestialsItemClicked = function (item, x, y) {
                     return __awaiter(this, void 0, void 0, function () {
-                        var celestial;
+                        var template, cel;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
-                                case 0: return [4, celestials_1.managers.CelestialsManager.addCelestialAtPosition(template, celestials_1.App.MousePosition.x, celestials_1.App.MousePosition.y)];
+                                case 0:
+                                    console.log("CLICKED");
+                                    template = item.Node.querySelector(".name").innerHTML;
+                                    return [4, celestials_1.managers.CelestialsManager.addCelestialAtPosition(template, x, y)];
                                 case 1:
-                                    celestial = _a.sent();
-                                    if (celestial == null)
-                                        return [2];
-                                    celestials_1.managers.CelestialsManager.startDrag(celestial);
+                                    cel = _a.sent();
+                                    if (cel != null) {
+                                        celestials_1.managers.CelestialsManager.onGrab(cel, x, y);
+                                        celestials_1.managers.MouseManager.startDrag(cel.Node);
+                                    }
                                     return [2];
                             }
                         });
                     });
-                };
-                CelestialsPanel.prototype._onCelestialsItemClicked = function (item) {
-                    console.log("CLICKED");
-                    var template = item.Node.querySelector(".name").innerHTML;
-                    this._createTemplate(template);
                 };
                 return CelestialsPanel;
             }(menus.OverlayMenu));
@@ -2344,20 +2474,21 @@ var celestials;
                             new celestials.ui.menus.ApplicationContext(document.querySelector(".context-menu.application"));
                             new celestials.ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
                             new celestials.ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds"));
+                            new celestials.ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel"));
                             new celestials.ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
                             new celestials.ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
-                            celestials.ui.menus.NotificationBar.addNotification("This is a test!", celestials.ui.menus.NotificationBar.Type.Notify);
-                            celestials.ui.menus.NotificationBar.addNotification("This is a test for failure!", celestials.ui.menus.NotificationBar.Type.Fail);
-                            return [4, new celestials.managers.InputManager()];
+                            celestials.systems.Notifications.addNotification("This is a test!", celestials.systems.Notifications.TYPE.Notify);
+                            celestials.systems.Notifications.addNotification("This is a test for failure!", celestials.systems.Notifications.TYPE.Fail);
+                            return [4, new celestials.managers.MouseManager()];
                         case 1:
                             _a.sent();
-                            return [4, new celestials.managers.RemoteManager()];
+                            return [4, new celestials.managers.InputManager()];
                         case 2:
                             _a.sent();
                             return [4, new celestials.managers.CelestialsManager()];
                         case 3:
                             celestialsMan = _a.sent();
-                            return [4, celestialsMan.setup(celestials.managers.RemoteManager.Files)];
+                            return [4, celestialsMan.setup()];
                         case 4:
                             _a.sent();
                             return [4, new celestials.systems.Controls()];
@@ -2454,7 +2585,7 @@ var celestials;
                 }
                 this._onWallHitListener = null;
             }
-            Object.defineProperty(Physics, "Wall", {
+            Object.defineProperty(Physics, "WALL", {
                 get: function () { return Object.freeze({ "Top": 0, "Right": 1, "Bottom": 2, "Left": 3 }); },
                 enumerable: true,
                 configurable: true
@@ -2496,19 +2627,19 @@ var celestials;
                 var regOffset = this._entity.RegistrationOffset;
                 if (entityBounds.Left < screenBounds.Left) {
                     this._entity.X = screenBounds.Left + regOffset.x;
-                    this.callWallHit(Physics.Wall.Left);
+                    this.callWallHit(Physics.WALL.Left);
                 }
                 else if (entityBounds.Right > screenBounds.Right) {
                     this._entity.X = screenBounds.Right - (entityBounds.Width - regOffset.x);
-                    this.callWallHit(Physics.Wall.Right);
+                    this.callWallHit(Physics.WALL.Right);
                 }
                 if (entityBounds.Top < screenBounds.Top) {
                     this._entity.Y = screenBounds.Top + (entityBounds.Height - regOffset.y);
-                    this.callWallHit(Physics.Wall.Top);
+                    this.callWallHit(Physics.WALL.Top);
                 }
                 else if (entityBounds.Bottom > screenBounds.Bottom) {
                     this._entity.Y = screenBounds.Bottom - regOffset.y;
-                    this.callWallHit(Physics.Wall.Bottom);
+                    this.callWallHit(Physics.WALL.Bottom);
                 }
             };
             Physics.prototype.correctVelocity = function () {
@@ -2548,19 +2679,19 @@ var celestials;
                 for (var _a = 0, walls_1 = walls; _a < walls_1.length; _a++) {
                     var wall = walls_1[_a];
                     switch (wall) {
-                        case Physics.Wall.Left:
+                        case Physics.WALL.Left:
                             if (entityBounds.Left <= screenBounds.Left)
                                 return true;
                             break;
-                        case Physics.Wall.Right:
+                        case Physics.WALL.Right:
                             if (entityBounds.Right >= screenBounds.Right)
                                 return true;
                             break;
-                        case Physics.Wall.Top:
+                        case Physics.WALL.Top:
                             if (entityBounds.Top <= screenBounds.Top)
                                 return true;
                             break;
-                        case Physics.Wall.Bottom:
+                        case Physics.WALL.Bottom:
                             if (entityBounds.Bottom >= screenBounds.Bottom)
                                 return true;
                             break;
@@ -2622,12 +2753,13 @@ var celestials;
                 this._drawingFrame = false;
                 this._pauseIntegrityCheck = false;
                 if (data != null) {
-                    if (data.updateRate != null)
-                        this._updateRate = celestials.clamp(data.updateRate, 1, 1000);
-                    if (data.eagerness != null)
-                        this._eagerness = celestials.clamp(data.eagerness, 1, 100);
-                    if (data.attentionSpan != null)
-                        this._attentionSpan = celestials.clamp(data.attentionSpan, 0, 100);
+                    var updateRate = data.updateRate, eagerness = data.eagerness, attentionSpan = data.attentionSpan;
+                    if (updateRate != null)
+                        this._updateRate = celestials.clamp(updateRate, 1, 1000);
+                    if (eagerness != null)
+                        this._eagerness = celestials.clamp(eagerness, 1, 100);
+                    if (attentionSpan != null)
+                        this._attentionSpan = celestials.clamp(attentionSpan, 0, 100);
                 }
             }
             CelestialLogic.prototype.next = function () {
@@ -2675,7 +2807,7 @@ var celestials;
             CelestialLogic.prototype.handleWallHit = function (which) {
                 console.log("HIT WALL CHECK");
                 this._handleStateIntegrity(which);
-                if (which == Physics.Wall.Bottom && this._celestial.Sequencer.isCurrentState(celestials.engines.CelestialSequencer.State.Fall)) {
+                if (which == Physics.WALL.Bottom && this._celestial.Sequencer.isCurrentState(celestials.engines.CelestialSequencer.State.Fall)) {
                     console.log("CALLED");
                     var state = this._celestial.Sequencer.changeState(celestials.engines.CelestialSequencer.State.Recover);
                     if (state != celestials.engines.CelestialSequencer.State.Recover) {
@@ -2730,14 +2862,14 @@ var celestials;
                     case cs.State.Climb:
                         this._celestial.Physics.setGravity(0);
                         var lastTouchedWall = this._celestial.Physics.LastTouchedWall;
-                        if (lastTouchedWall != Physics.Wall.Left && lastTouchedWall != Physics.Wall.Right)
-                            lastTouchedWall = (this._celestial.Bounds.Center.x < celestials.App.Bounds.Center.x) ? Physics.Wall.Left : Physics.Wall.Right;
+                        if (lastTouchedWall != Physics.WALL.Left && lastTouchedWall != Physics.WALL.Right)
+                            lastTouchedWall = (this._celestial.Bounds.Center.x < celestials.App.Bounds.Center.x) ? Physics.WALL.Left : Physics.WALL.Right;
                         switch (lastTouchedWall) {
-                            case Physics.Wall.Left:
+                            case Physics.WALL.Left:
                                 this._celestial.Physics.snapToLeft();
                                 this._celestial.setDirectionX(-1);
                                 break;
-                            case Physics.Wall.Right:
+                            case Physics.WALL.Right:
                                 this._celestial.Physics.snapToRight();
                                 this._celestial.setDirectionX(1);
                         }
@@ -2774,22 +2906,22 @@ var celestials;
                     case cs.State.Climb:
                         if (this._tryToHang(wallHit))
                             break;
-                        if (!this._celestial.Physics.isTouchingWall(Physics.Wall.Left, Physics.Wall.Right)) {
+                        if (!this._celestial.Physics.isTouchingWall(Physics.WALL.Left, Physics.WALL.Right)) {
                             this.nextState();
                             break;
                         }
-                        if (this._celestial.Physics.isTouchingWall(Physics.Wall.Left) && this._celestial.Direction.x != -1) {
+                        if (this._celestial.Physics.isTouchingWall(Physics.WALL.Left) && this._celestial.Direction.x != -1) {
                             this.nextState();
                             break;
                         }
-                        if (this._celestial.Physics.isTouchingWall(Physics.Wall.Right) && this._celestial.Direction.x != 1) {
+                        if (this._celestial.Physics.isTouchingWall(Physics.WALL.Right) && this._celestial.Direction.x != 1) {
                             this.nextState();
                             break;
                         }
                         break;
                     case cs.State.Hang:
                         if (wallHit != null)
-                            if (wallHit == Physics.Wall.Left || wallHit == Physics.Wall.Right)
+                            if (wallHit == Physics.WALL.Left || wallHit == Physics.WALL.Right)
                                 this._celestial.flipX();
                         if (wallHit == null)
                             if (this._celestial.Bounds.Top > celestials.App.Bounds.Top)
@@ -2880,11 +3012,11 @@ var celestials;
             CelestialLogic.prototype._completeClimbs = function () {
                 console.log("JUMP OFF WALL!");
                 switch (this._celestial.Physics.LastTouchedWall) {
-                    case Physics.Wall.Left:
+                    case Physics.WALL.Left:
                         this._celestial.Physics.addForceX(celestials.randomRange(35, 80));
                         this._celestial.flipX();
                         break;
-                    case Physics.Wall.Right:
+                    case Physics.WALL.Right:
                         this._celestial.Physics.addForceX(celestials.randomRange(-35, -80));
                         this._celestial.flipX();
                         break;
@@ -2908,7 +3040,7 @@ var celestials;
             };
             CelestialLogic.prototype._tryToClimb = function (wallHit) {
                 if (wallHit != null) {
-                    if (wallHit == Physics.Wall.Left || wallHit == Physics.Wall.Right) {
+                    if (wallHit == Physics.WALL.Left || wallHit == Physics.WALL.Right) {
                         if (celestials.randomRange(0, 1) > this._celestial.Sequencer.CurrentSequenceSet.attentionSpan || 100 / 100) {
                             var state = this._celestial.Sequencer.changeState(celestials.engines.CelestialSequencer.State.Climb);
                             if (state != celestials.engines.CelestialSequencer.State.Climb)
@@ -2927,7 +3059,7 @@ var celestials;
             CelestialLogic.prototype._tryToHang = function (wallHit) {
                 if (wallHit == null)
                     return false;
-                if (wallHit != Physics.Wall.Top)
+                if (wallHit != Physics.WALL.Top)
                     return false;
                 if (celestials.randomRange(0, 1) > 0) {
                     var state = this._celestial.Sequencer.changeState(celestials.engines.CelestialSequencer.State.Hang);

@@ -6,7 +6,7 @@ namespace celestials.engines {
     }
     
     export class Physics implements IUpdateable {
-        public static get Wall() { return Object.freeze({"Top":0, "Right":1, "Bottom":2, "Left":3});}
+        public static get WALL() { return Object.freeze({"Top":0, "Right":1, "Bottom":2, "Left":3});}
         public static get DEF_GRAVITY():number { return 10; }
         private _entity:entities.Entity;
         private _gravity:number;
@@ -80,19 +80,19 @@ namespace celestials.engines {
 
             if(entityBounds.Left < screenBounds.Left) {
                 this._entity.X = screenBounds.Left + regOffset.x;
-                this.callWallHit(Physics.Wall.Left);
+                this.callWallHit(Physics.WALL.Left);
             }
             else if(entityBounds.Right > screenBounds.Right) {
                 this._entity.X = screenBounds.Right - (entityBounds.Width - regOffset.x);
-                this.callWallHit(Physics.Wall.Right);
+                this.callWallHit(Physics.WALL.Right);
             }
             if(entityBounds.Top < screenBounds.Top) {
                 this._entity.Y = screenBounds.Top + (entityBounds.Height - regOffset.y);
-                this.callWallHit(Physics.Wall.Top);
+                this.callWallHit(Physics.WALL.Top);
             }
             else if(entityBounds.Bottom > screenBounds.Bottom) {
                 this._entity.Y = screenBounds.Bottom - regOffset.y;
-                this.callWallHit(Physics.Wall.Bottom);
+                this.callWallHit(Physics.WALL.Bottom);
             }
         }
 
@@ -129,16 +129,16 @@ namespace celestials.engines {
 
             for(let wall of walls) {
                 switch(wall) {
-                    case Physics.Wall.Left:
+                    case Physics.WALL.Left:
                         if(entityBounds.Left <= screenBounds.Left) return true;
                         break;
-                    case Physics.Wall.Right:
+                    case Physics.WALL.Right:
                         if(entityBounds.Right >= screenBounds.Right) return true;
                         break;
-                    case Physics.Wall.Top:
+                    case Physics.WALL.Top:
                         if(entityBounds.Top <= screenBounds.Top) return true;
                         break;
-                    case Physics.Wall.Bottom:
+                    case Physics.WALL.Bottom:
                         if(entityBounds.Bottom >= screenBounds.Bottom) return true;
                         break;
                 }

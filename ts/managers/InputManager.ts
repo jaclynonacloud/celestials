@@ -42,6 +42,11 @@ namespace celestials.managers {
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         /*---------------------------------------------- EVENTS --------------------------------------*/
+        private _onMouseDown(e:MouseEvent) {
+            //call
+            console.log("CLICKED GLOBAL: ");
+            console.log(e.target);
+        }
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
         public static get Bindings():Dictionary<string, KeyBinding> { return InputManager._bindings; }
 

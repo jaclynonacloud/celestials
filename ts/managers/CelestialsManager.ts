@@ -5,13 +5,6 @@ namespace celestials.managers{
     import Celestial = entities.Celestial;
     import ICelestial = entities.ICelestial;
 
-    export interface IActiveCelestial {
-        celestial?:Celestial;
-        zIndex?:number;
-        lastX?:number;
-        lastY?:number;
-    }
-
     export class CelestialsManager {
         private static _instance:CelestialsManager;
         private static _lookup:Dictionary<string, Celestial>;
@@ -22,10 +15,6 @@ namespace celestials.managers{
 
         private _templates:Celestial[];
         private _celestials:Celestial[];
-
-        private _activeCelestial:IActiveCelestial;
-
-        private _eventRegistry:Dictionary<string, any>;
 
         constructor() {
             CelestialsManager._instance = this;
@@ -38,16 +27,6 @@ namespace celestials.managers{
 
             this._templates = new Array<Celestial>();
             this._celestials = new Array<Celestial>();
-
-            this._eventRegistry = new Dictionary();
-            // this._eventRegistry.add("celClick", this._onCelestialClick.bind(this));
-            this._eventRegistry.add("celDrag", this._onCelestialDrag.bind(this));
-            this._eventRegistry.add("celDrop", this._onCelestialDrop.bind(this));
-
-            this._activeCelestial = {
-                celestial: null,
-                zIndex: 1
-            };
 
 
             //setup listeners
@@ -107,7 +86,7 @@ namespace celestials.managers{
                 //test for availability
                 if(celestial.Data.maxSpawns != null && !addedByLineage) {
                     if(CelestialsManager.countCelestials(celestial.Lookup) + 1 > celestial.Data.maxSpawns) {
-                        ui.menus.NotificationBar.addNotification(`Max spawns reached for ${celestial.Name}.`, ui.menus.NotificationBar.Type.Fail);
+                        systems.Notifications.addNotification(`Max spawns reached for ${celestial.Name}.`, systems.Notifications.TYPE.Fail);
                         return null;
                     }
                 }
@@ -118,7 +97,6 @@ namespace celestials.managers{
                 //TODO create COPY, not just use the template
                 if(copy.load()) {
                     await CelestialsManager._instance._celestials.push(copy);
-                    copy.addClickListener(CelestialsManager._instance._onCelestialClickFromCelestial.bind(this));
                     return copy;
                 }
             }
@@ -159,88 +137,49 @@ namespace celestials.managers{
             for(let cel of CelestialsManager._instance._celestials)
             if(cel.IsLoaded)
                 cel.update();
-
-            if(CelestialsManager._instance._activeCelestial.celestial != null) {
-                CelestialsManager._instance._activeCelestial.lastX = App.MousePosition.x;
-                CelestialsManager._instance._activeCelestial.lastY = App.MousePosition.y;
-            }
-        }
-
-        public static setActiveCelestial(celestial:Celestial) {
-            //must be an active one in the scene
-            if(CelestialsManager._instance._celestials.indexOf(celestial) == -1) return;
-            //otherwise, set it
-            CelestialsManager._instance._activeCelestial.celestial = celestial;
-        }
-        public static startDrag(celestial:Celestial) {
-            //stop listening if we were already draggging
-            CelestialsManager._instance._onCelestialDrop(null);
-
-            CelestialsManager.setActiveCelestial(celestial);
-            CelestialsManager._instance._activeCelestial.zIndex = parseInt(celestial.Node.style.zIndex);
-            //add celestial to top of stack briefly
-            celestial.Node.style.zIndex = '100';
-            celestial.takeControl();
-
-            //setup listeners
-            App.Node.addEventListener("mousemove", CelestialsManager._instance._eventRegistry.getValue("celDrag"));
-            App.Node.addEventListener("mouseup", CelestialsManager._instance._eventRegistry.getValue("celDrop"));
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         /*---------------------------------------------- EVENTS --------------------------------------*/
-        private _onCelestialClickFromCelestial(celestial:Celestial) {
-            CelestialsManager.startDrag(celestial);
+        public static onGrab(cel:Celestial, x:number, y:number) {
+            console.log("GRABBED");
+            //add celestial to top of stack briefly
+            cel.Node.style.zIndex = '100';
+            cel.takeControl();
+            cel.Physics.zeroVelocity();
         }
-        // private _onCelestialClick(e:MouseEvent) {
-            
-        // }
-        private _onCelestialDrag(e:MouseEvent) {
-            if(this._activeCelestial.celestial == null) return;
-            let celestial:entities.Celestial = this._activeCelestial.celestial;
-            celestial.Physics.setGravity(0);
-            console.log("DRAG : " + celestial.Name);
-
-            let x = e.clientX;
-            let y = e.clientY + (celestial.Height * celestial.RegistrationPoint.y);
-
-            celestial.X = x;
-            celestial.Y = y;
+        public static onDrag(cel:Celestial, x:number, y:number) {
+            console.log(cel.Name);
+            console.log("DRAGGING: ", x, y);
+            //get position
+            x = x;
+            y += (cel.Height * cel.RegistrationPoint.y);
+            //set position
+            cel.X = x;
+            cel.Y = y;
         }
-        private _onCelestialDrop(e:MouseEvent) {
-            //remove listeners
-            App.Node.removeEventListener("mousemove", this._eventRegistry.getValue("celDrag"));
-            App.Node.removeEventListener("mouseup", this._eventRegistry.getValue("celDrop"));
+        public static onDrop(cel:Celestial, x:number, y:number) {
+            console.log("DROPPED");
+            cel.releaseControl();
+            cel.Physics.resetGravity();
+            //put celestial back where it came from
+            cel.Node.style.zIndex = `${cel.Data.zIndex || 1}`;
 
-            if(this._activeCelestial.celestial != null) {
-                let celestial:entities.Celestial = this._activeCelestial.celestial;
-                celestial.Node.style.zIndex = `${this._activeCelestial.zIndex}`;
-                celestial.Physics.resetGravity();
-                celestial.releaseControl();
+            //fling celestial
+            let { x:lastX, y:lastY } = MouseManager.LastMousePosition;
+            let flingX:number = ((x - lastX) / App.Bounds.Width) * App.Bounds.Width;
+            let flingY:number = ((y - lastY) / App.Bounds.Height) * App.Bounds.Height;
 
-                //gather fling velocity
-                if(e != null) {
-                    console.log("LAST: " , this._activeCelestial.lastX, ", CURR: " , e.clientX);
-                    let flingX:number = ((e.clientX - (this._activeCelestial.lastX || e.clientX)) / App.Bounds.Width) * App.Bounds.Width;
-                    let flingY:number = ((e.clientY - (this._activeCelestial.lastY || e.clientY)) / App.Bounds.Height) * App.Bounds.Height;
+            cel.Physics.zeroVelocity();
+            cel.Physics.addForceX(flingX);
+            cel.Physics.addForceY(flingY);
 
-                    console.log("FLING: ", flingX, flingY);
-
-                    celestial.Physics.zeroVelocity();
-                    celestial.Physics.addForceX(flingX);
-                    celestial.Physics.addForceY(flingY);
-
-                    //change forward direction
-                    if(flingX != 0) {
-                        if(flingX > 0) celestial.setDirectionX(1);
-                        else celestial.setDirectionX(-1);
-                    }
-                }
-
-                
-
-                this._activeCelestial.celestial = null;
+            //change forward direction
+            if(flingX != 0) {
+                if(flingX > 0) cel.setDirectionX(1);
+                else cel.setDirectionX(-1);
             }
+
         }
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
         public static get Template():HTMLElement { return CelestialsManager._instance._template; }

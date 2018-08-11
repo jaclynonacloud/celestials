@@ -6,6 +6,7 @@ namespace celestials.entities {
         lookup?:string;
         scale?:{min:number, max:number};
         maxSpawns?:number;
+        zIndex?:number;
         icon?:string;
         images?:{name:string, path:string}[];
         spritesheets?:ISpritesheet[];
@@ -32,8 +33,6 @@ namespace celestials.entities {
         private _paused:boolean;
         private _isControlled:boolean; //true when user is controlling the celestial, such as dragging \\ limited movements
 
-        private _clickListener:Function;
-
         //debug
         private _overlayMenu:ui.menus.CelestialOverlay;
 
@@ -54,7 +53,7 @@ namespace celestials.entities {
             this._eventsRegistry.add("stateChange", this._onStateChange.bind(this));
             this._eventsRegistry.add("stateComplete", this._onStateComplete.bind(this));
             this._eventsRegistry.add("wallHit", this._onWallHit.bind(this));
-            this._eventsRegistry.add("click", this._onClicked.bind(this));
+            // this._eventsRegistry.add("click", this._onClicked.bind(this));
             this._eventsRegistry.add("rightClick", this._onRightClicked.bind(this));
         }
 
@@ -155,14 +154,6 @@ namespace celestials.entities {
         }
         public releaseControl() {
             this._isControlled = false;
-        }
-
-
-        public addClickListener(clickListener:Function) {
-            this._clickListener = clickListener;
-        }
-        public removeClickListener() {
-            this._clickListener = null;
         }
         
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
@@ -303,8 +294,14 @@ namespace celestials.entities {
                                     this._sequencer.addStateCompleteListener(this._eventsRegistry.getValue("stateComplete"));
                                     this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
                                     //TODO I've setup the click event, don't readd unless removing this one
-                                    this._node.addEventListener("mousedown", this._eventsRegistry.getValue("click"));
-                                    this._node.addEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
+                                    // managers.MouseManager.listenForMouseDown(this._node, (e) => this._onClicked(e));
+                                    managers.MouseManager.listenForDrag(this._node,
+                                        (x,y) => managers.CelestialsManager.onGrab(this, x, y),
+                                        (x,y) => managers.CelestialsManager.onDrag(this, x, y),
+                                        (x,y) => managers.CelestialsManager.onDrop(this, x, y)
+                                    );
+                                    // this._node.addEventListener("mousedown", this._eventsRegistry.getValue("click"));
+                                    // this._node.addEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
                                 });
     
     
@@ -317,6 +314,8 @@ namespace celestials.entities {
 
             });            
         }
+
+        
 
         /**
          * Unloads the Celestial's graphics and other data.
@@ -380,11 +379,14 @@ namespace celestials.entities {
         }
 
 
-        private _onClicked(e:MouseEvent) {
-            if(e.button != 0) return;
-            if(this._clickListener != null)
-                this._clickListener(this);
-        }
+        
+
+
+        // private _onClicked(e:MouseEvent) {
+        //     if(e.button != 0) return;
+        //     if(this._clickListener != null)
+        //         this._clickListener(this);
+        // }
 
         private _onRightClicked(e:Event) {
             e.preventDefault();
