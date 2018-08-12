@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="styles/main.css">
     <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
     <!-- <script src="js/background.js" defer></script> -->
-    <script src="js/celestials.js" defer></script>
+    <!-- <script src="js/celestials.js" defer></script> -->
 </head>
 <body>
     <div class="screen" data-clickable>
@@ -59,14 +59,6 @@
                 </div>
             </label>
             <!-- /Allow Notifications -->
-            <!-- Allow Moods -->
-            <label class="ui toggle-group" data-tooltip="Allows celestials to be moody.">
-                <div class="title">Allow Moods</div>
-                <div class="ui toggle-container">
-                    <input type="checkbox"><span class="slider"></span>
-                </div>
-            </label>
-            <!-- /Allow Moods -->
             <!-- Use Weather -->
             <label class="ui toggle-group" data-tooltip="Allows weather to happen.">
                 <div class="title">Use Weather</div>
@@ -109,8 +101,8 @@
                 </label>
                 <!-- /Show Overlays -->  
             </div>
-            <div class="row ui button" data-tooltip="Open celestial lineage panel.">Show Celestial Lineage</div>
-            <div class="row ui button" data-tooltip="Open notifications panel.">Show Notifications</div>
+            <div class="row ui button" data-button="show-celestials-lineage" data-tooltip="Open celestial lineage panel.">Show Celestial Lineage</div>
+            <div class="row ui button" data-button="show-notifications" data-tooltip="Open notifications panel.">Show Notifications</div>
         </div>
         <!-- /Control Panel -->
         <!-- Notification Bar -->
@@ -167,6 +159,470 @@
                 </div>
             </div>
         <!-- /Celestials Panel -->
+        <!-- Current Celestials Panel -->
+        <div class="overlay-menu current-celestials">
+            <div class="ui toolbar">
+                <div class="name">Current Celestials</div>
+                <div class="ui close" data-tooltip="Close notifications panel.">&#9587;</div>
+            </div>
+            <div class="sort-list">
+                <div class="sort-list__title">Sort by : </div>
+                <div class="sort-list__items">
+                    <label class="ui radio-group">
+                        <input type="radio" name="sort" value="name" checked>
+                        <div class="ui button">Name</div>
+                    </label>
+                    <label class="ui radio-group">
+                        <input type="radio" name="sort" value="type">
+                        <div class="ui button">Type</div>
+                    </label>
+                    <label class="ui radio-group">
+                        <input type="radio" name="sort" value="date">
+                        <div class="ui button">Date Spawned</div>
+                    </label>
+                </div>
+            </div>
+            <div class="ui list">
+
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui item celestial template" data-clickable>
+                    <div class="celestial__image">
+                        <img src="res/celestials/solaris/single.png" alt="">
+                    </div>
+                    <div class="celestial__content">
+                        <div class="ui row">
+                            <div class="ui row">
+                                <div class="name">Solaris</div><span style="margin: 0 5px;">|</span>
+                                <div class="type">solaris</div>
+                            </div>
+                            <div class="date">Spawned @ jan xx - xx:xx:xx</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+                
+        </div>
+        <!-- /Current Celestials Panel -->
         <!-- /Overlay Menus -->
 
         <!-- Context Menus -->
@@ -211,7 +667,7 @@
                     <li class="ctx-dropdown-header template">Name Template</li>
                     <li class="ctx-dropdown-2 template">
                         <ul>                            
-                            <li class="ctx-item template">Template</li>
+                            <li class="ctx-item template" data-clickable>Template</li>
                         </ul>
                     </li>
                 </ul>

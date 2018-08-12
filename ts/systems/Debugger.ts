@@ -111,7 +111,7 @@ namespace celestials.systems {
         private _switchState() {
             //switch to walk
             for(let celestial of CelestialsManager.Celestials)
-                celestial.Sequencer.changeState(engines.CelestialSequencer.State.Walk);
+                celestial.Sequencer.changeState(engines.CelestialSequencer.STATE.Walk);
         }
 
 

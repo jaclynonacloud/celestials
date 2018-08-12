@@ -26,12 +26,7 @@ namespace celestials.managers{
 
 
             this._templates = new Array<Celestial>();
-            this._celestials = new Array<Celestial>();
-
-
-            //setup listeners
-            // this._container.addEventListener("mousedown", this._eventRegistry.getValue("celClick"));
-            
+            this._celestials = new Array<Celestial>();            
         }
 
 
@@ -63,6 +58,10 @@ namespace celestials.managers{
             //TODO: load a random unlocked celestial
             if(CelestialsManager._lookup.containsKey("solaris"))
                 CelestialsManager.addCelestial("solaris");
+
+
+            //listen to bounds leave -- call up event if we leave
+            managers.MouseManager.listenForMouseOut(App.Node, (x,y) => managers.MouseManager.simluateMouseUp(App.Node));
         }
 
         /**
@@ -91,10 +90,7 @@ namespace celestials.managers{
                     }
                 }
 
-                // let copy:Celestial = celestial.clone();
-                let data:ICelestial = CelestialsManager._data.getValue(lookup);
                 let copy:Celestial = celestial.clone();
-                //TODO create COPY, not just use the template
                 if(copy.load()) {
                     await CelestialsManager._instance._celestials.push(copy);
                     return copy;

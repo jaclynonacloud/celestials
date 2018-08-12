@@ -115,6 +115,18 @@ namespace celestials.entities {
         }
 
 
+        public setZIndex(index:number) {
+            this.setZIndexTemp(index);
+            this.Data.zIndex = index;
+        }
+        public setZIndexTemp(index:number) {
+            this._node.style.zIndex = `${index}`;
+        }
+        public resetZIndex() {
+            this.setZIndexTemp(this.Data.zIndex);
+        }
+
+
         public async getIcon():Promise<string> {
 
             if(this._imagesLookup.containsKey("icon")) {
@@ -166,146 +178,146 @@ namespace celestials.entities {
         /**
          * Loads the Celestial's graphics and other data.
          */
-        public load() {
-            return new Promise((resolve, reject) => {
+        public async load() {
+            await super.load();
+
+
+
+            return new Promise(async (resolve, reject) => {
                 try {
-                    super.load()
-                        .then(() => {
-                            let data:ICelestial = this._data;
-                            //create logic
-                            this._sequencer = new engines.CelestialSequencer(this);
-                            //create physics
-                            this._physics = new engines.Physics(this);
-                            //create logic
-                            this._logic = new logic.CelestialLogic(this, this.Data.logic || null);
-                            //set the scale
-                            this._scale = randomRange(data.scale.min, data.scale.max);
-                            // this._scale = 1;
+                    let data:ICelestial = this._data;
+                    //create logic
+                    this._sequencer = new engines.CelestialSequencer(this);
+                    //create physics
+                    this._physics = new engines.Physics(this);
+                    //create logic
+                    this._logic = new logic.CelestialLogic(this, this.Data.logic || null);
+                    //set the scale
+                    this._scale = randomRange(data.scale.min, data.scale.max);
+                    // this._scale = 1;
 
 
-                            //iterate through each image
-                            let promises = new Array();                           
-    
-                            
-                            if(data.images != null) {
-                                for(let imgData of data.images) {
-                                    promises.push(
-                                        new Promise((res, rej) => {
-                                            try {
-                                                //go get the images to load
-                                                let img = document.createElement("img");
-                                                //listen for load
-                                                img.onload = () => {
-                                                    //set the image
-                                                    console.log("loaded image!");
-                                                    // imgData.src = img.src;
-                                                    if(!this.addImage(imgData.name, img.src))
-                                                        throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
+                    //destructure data
+                    let { path, images, spritesheets, name, lookup } = this.Data;
+
+
+                    //iterate through each image
+                    let promises = new Array();                           
+
+                    
+                    if(images != null) {
+                        for(let imgData of images) {
+                            promises.push(
+                                new Promise((res, rej) => {
+                                    try {
+                                        //go get the images to load
+                                        let img = document.createElement("img");
+                                        //listen for load
+                                        img.onload = () => {
+                                            //set the image
+                                            console.log("loaded image!");
+                                            // imgData.src = img.src;
+                                            if(!this.addImage(imgData.name, img.src))
+                                                throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
+                                            res();
+                                        }
+                                        //load the image
+                                        img.src = path + imgData.path;
+                                    }
+                                    catch(e) {
+                                        rej();
+                                    }
+                                })
+                            );
+                        }
+                    }
+                    //iterate through each spritesheet
+                    if(spritesheets != null) {
+                        for(let spritesheet of spritesheets) {
+                            promises.push(
+                                new Promise((res, rej) => {
+                                    try {
+                                        //go get the images to load
+                                        let img = document.createElement("img");
+                                        //listen for laod
+                                        img.onload = () => {
+                                            //set each frame
+                                            for(let frame of spritesheet.frames) {
+                                                console.log("loaded sprite!");
+                                                //give the chop
+                                                cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
+                                                    //set as the image
+                                                    // frame.src = crop.src;
+                                                    if(!this.addImage(frame.name, crop.src))
+                                                        throw new Error(`An image already exists belonging to ${this.Name} - ${frame.name}.  Please choose a unique name.`);
                                                     res();
-                                                }
-                                                //load the image
-                                                img.src = data.path + imgData.path;
+                                                });
                                             }
-                                            catch(e) {
-                                                rej();
-                                            }
-                                        })
-                                    );
-                                }
-                            }
-                            //iterate through each spritesheet
-                            if(data.spritesheets != null) {
-                                for(let spritesheet of data.spritesheets) {
-                                    promises.push(
-                                        new Promise((res, rej) => {
-                                            try {
-                                                //go get the images to load
-                                                let img = document.createElement("img");
-                                                //listen for laod
-                                                img.onload = () => {
-                                                    //set each frame
-                                                    for(let frame of spritesheet.frames) {
-                                                        console.log("loaded sprite!");
-                                                        //give the chop
-                                                        cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
-                                                            //set as the image
-                                                            // frame.src = crop.src;
-                                                            if(!this.addImage(frame.name, crop.src))
-                                                                throw new Error(`An image already exists belonging to ${this.Name} - ${frame.name}.  Please choose a unique name.`);
-                                                            res();
-                                                        });
-                                                    }
-                                                }
-                                                //load the spritesheet image
-                                                img.src = data.path + spritesheet.path;
-                                            }
-                                            catch(e) {
-                                                rej();
-                                            }
-                                        })
-                                    );
-                                }
-                            }
-
-                            //once all images are loaded - continue
-                            Promise.all(promises)
-                                .then(() => {
-                                    console.log("loaded all images!");
-                                    //TEST REQUIREMENTS of this entity
-                                    //needs a lookup
-                                    if(data.lookup == null)
-                                        throw new Error("Celestial has no lookup property!");
-                                    //needs a name
-                                    if(data.name == null)
-                                        throw new Error("Celestial has no name property!");
-                                    //needs images
-                                    if(data.images == null && data.spritesheets == null)
-                                        throw new Error("No images/spritesheets were supplied.");
-            
-                                    //put the container in
-                                    this._container.appendChild(this._node);
-            
-            
-                                    console.log(this._imagesLookup.FullList);
-                                    //load the first logic
-                                    this._logic.load()
-                                        .then(() => {
-
-                                            //DEBUG: Created a ui menu item to show current controls
-                                            this._overlayMenu = new ui.menus.CelestialOverlay(this);
-                                            this._node.parentNode.appendChild(this._overlayMenu.Node);
-
-                                            resolve();
-                                            this._isLoaded = true;
+                                        }
+                                        //load the spritesheet image
+                                        img.src = data.path + spritesheet.path;
+                                    }
+                                    catch(e) {
+                                        rej();
+                                    }
+                                })
+                            );
+                        }
+                    }
 
 
-                                            //DEBUG: THIS IS A TEST
-                                            //create context menu
-                                            // ui.CelestialContext.show(this);
-                                        });
+                    //once all images are loaded - continue
+                    await Promise.all(promises);
 
-                                    //fix image problem
-                                    (this._node.querySelector(".graphics") as HTMLElement).ondragstart = function() { return false; }
-                                    
-            
-                                    //wire listeners
-                                    this._sequencer.addSequenceCompleteListener(this._eventsRegistry.getValue("sequenceComplete"));
-                                    this._sequencer.addStateChangeListener(this._eventsRegistry.getValue("stateChange"));
-                                    this._sequencer.addStateCompleteListener(this._eventsRegistry.getValue("stateComplete"));
-                                    this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
-                                    //TODO I've setup the click event, don't readd unless removing this one
-                                    // managers.MouseManager.listenForMouseDown(this._node, (e) => this._onClicked(e));
-                                    managers.MouseManager.listenForDrag(this._node,
-                                        (x,y) => managers.CelestialsManager.onGrab(this, x, y),
-                                        (x,y) => managers.CelestialsManager.onDrag(this, x, y),
-                                        (x,y) => managers.CelestialsManager.onDrop(this, x, y)
-                                    );
-                                    // this._node.addEventListener("mousedown", this._eventsRegistry.getValue("click"));
-                                    // this._node.addEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
-                                });
-    
-    
-                        });
+                    console.log("loaded all images!");
+                    //TEST REQUIREMENTS of this entity
+                    //needs a lookup
+                    if(lookup == null)
+                        throw new Error("Celestial has no lookup property!");
+                    //needs a name
+                    if(name == null)
+                        throw new Error("Celestial has no name property!");
+                    //needs images
+                    if(images == null && spritesheets == null)
+                        throw new Error("No images/spritesheets were supplied.");
+
+                    //put the container in
+                    this._container.appendChild(this._node);
+
+
+                    console.log(this._imagesLookup.FullList);
+                    //load the first logic
+                    await this._logic.load();
+                    //DEBUG: Created a ui menu item to show current controls
+                    this._overlayMenu = new ui.menus.CelestialOverlay(this);
+                    this._node.parentNode.appendChild(this._overlayMenu.Node);
+
+                    resolve();
+                    this._isLoaded = true;
+
+
+                    //DEBUG: THIS IS A TEST
+                    //create context menu
+                    // ui.CelestialContext.show(this);
+
+                    //fix image problem
+                    (this._node.querySelector(".graphics") as HTMLElement).ondragstart = function() { return false; }
+                    
+
+                    //wire listeners
+                    this._sequencer.addSequenceCompleteListener(this._eventsRegistry.getValue("sequenceComplete"));
+                    this._sequencer.addStateChangeListener(this._eventsRegistry.getValue("stateChange"));
+                    this._sequencer.addStateCompleteListener(this._eventsRegistry.getValue("stateComplete"));
+                    this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
+                    //TODO I've setup the click event, don't readd unless removing this one
+                    // managers.MouseManager.listenForMouseDown(this._node, (e) => this._onClicked(e));
+                    managers.MouseManager.listenForDrag(this._node,
+                        (x,y) => managers.CelestialsManager.onGrab(this, x, y),
+                        (x,y) => managers.CelestialsManager.onDrag(this, x, y),
+                        (x,y) => managers.CelestialsManager.onDrop(this, x, y)
+                    );
+                    //on right click, show context menu
+                    managers.MouseManager.listenForRightClick(this._node, () => ui.menus.CelestialContext.show(this));
                     
                 }  
                 catch(e) {

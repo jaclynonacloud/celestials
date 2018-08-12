@@ -4,6 +4,7 @@
     "path" : "./res/celestials/solaris/",
     "position" : { "x" : 200, "y" : 200 },
     "scale" : { "min" : 0.5, "max" : 1 },
+    "registrationPoint" : { "x" : 0.5, "y" : 1 },
 
     "physics" : {
         "degradeVelocity" : 0.75

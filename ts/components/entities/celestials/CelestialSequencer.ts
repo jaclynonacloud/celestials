@@ -35,7 +35,7 @@ namespace celestials.engines {
     
 
     export class CelestialSequencer implements IUpdateable {
-        public static get State() { return Object.freeze({
+        public static get STATE() { return Object.freeze({
             "Idle" : "idles",
             "Walk" : "walks",
             "Climb" : "climbs",
@@ -84,7 +84,7 @@ namespace celestials.engines {
         }
 
         /**Changes the Celestial's state.  Use the CelestialLogic.State options. */
-        public changeState(state:string=CelestialSequencer.State.Idle, fallback?:string) {
+        public changeState(state:string=CelestialSequencer.STATE.Idle, fallback?:string) {
             //switch out
             if(this._currentState != null)
                 this.completeState();
@@ -114,12 +114,12 @@ namespace celestials.engines {
          * @param omitCurrentState If true, the current state will not be reused.
          */
         public getRandomState(omitCurrentState:boolean=true) {
-            let keys:string[] = Object.keys(CelestialSequencer.State);
+            let keys:string[] = Object.keys(CelestialSequencer.STATE);
 
             //if there is only one state, omit cannot be used
             if(keys.length <= 1) return this._currentState;
 
-            let state:string = CelestialSequencer.State[keys[randomRangeInt(0, keys.length-1)]];
+            let state:string = CelestialSequencer.STATE[keys[randomRangeInt(0, keys.length-1)]];
             if(omitCurrentState && state == this._currentState) 
                 return this.getRandomState(true); //recursive
             //test whether this state is special

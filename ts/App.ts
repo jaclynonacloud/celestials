@@ -1,3 +1,12 @@
+/**
+ * @author Jaclyn Staples
+ * http://jaclynonacloud.com
+ * @version 2018.08.11
+ * 
+ * Celestials - A desktop buddies applications designed to be flexible and highly customizable!
+ * Uses json files to load and structure buddies.  Easily readable, easily designable.
+ */
+
 ///<reference path="./systems/Controls.ts" />
 ///<reference path="./systems/Debugger.ts" />
 ///<reference path="./systems/Notifications.ts" />
@@ -19,7 +28,6 @@ namespace celestials {
         private static _node:HTMLElement;
 
         private static _bounds:Rect;
-        private static _mousePosition:IPoint;
         private static _paused:boolean;
         private static _usingRemote:boolean;
 
@@ -28,14 +36,6 @@ namespace celestials {
             App._window = win;
             App._node = node;
             App._paused = false;
-
-
-            //get mouse position
-            App._mousePosition = {x:0, y:0};
-            App._node.addEventListener("mousemove", (e:MouseEvent) => {
-                App._mousePosition.x = e.x;
-                App._mousePosition.y = e.y;
-            });
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -43,32 +43,34 @@ namespace celestials {
             console.log("SETUP");
             App._bounds = new Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight);
 
-            
-
-            //set the contexts
-            new ui.menus.CelestialContext(document.querySelector(".context-menu.celestial"));
-            new ui.menus.ApplicationContext(document.querySelector(".context-menu.application"));
-            //set the statics
-            new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
-            new ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds"));
-            new ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel"));
-            new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
-            new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
-
-            //test
-            systems.Notifications.addNotification("This is a test!", systems.Notifications.TYPE.Notify);
-            systems.Notifications.addNotification("This is a test for failure!", systems.Notifications.TYPE.Fail);
-            
-
             //initialize managers
             await new managers.MouseManager();
             await new managers.InputManager();
+
             // await new managers.RemoteManager();
             // let celestialsMan = await new managers.CelestialsManager();
             // await celestialsMan.setup(managers.RemoteManager.Files)
 
             let celestialsMan = await new managers.CelestialsManager();
             await celestialsMan.setup();
+
+
+            //set the contexts
+            new ui.menus.CelestialContext(document.querySelector(".context-menu.celestial"));
+            new ui.menus.ApplicationContext(document.querySelector(".context-menu.application"));
+            //set the statics
+            new ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds"));
+            new ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel"));
+            new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
+            new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
+            new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
+
+            //test
+            systems.Notifications.addNotification("This is a test!", systems.Notifications.TYPE.Notify);
+            systems.Notifications.addNotification("This is a test for failure!", systems.Notifications.TYPE.Fail);
+            
+
+            
             
             
             //test
@@ -114,7 +116,11 @@ namespace celestials {
         public static get Window():Window { return App._window; }
         public static get Node():HTMLElement { return this._node; }
         public static get Bounds():Rect { return App._bounds; }
-        public static get MousePosition():IPoint { return App._mousePosition; }
+        /**
+         * Returns the current mouse position { x, y }.
+         * @requires managers.MouseManager.MousePosition
+         */
+        public static get MousePosition():IPoint { return managers.MouseManager.MousePosition; }
         public static get Paused():boolean { return App._paused; }
 
         
