@@ -29,6 +29,9 @@ namespace celestials.entities {
 
         protected _isLoaded:boolean;
 
+        //lets objects listen for changes to the entity
+        private _callbacksRegistry:Dictionary<HTMLElement, Function[]>;
+
         constructor(name:string, node:HTMLElement, data:IEntity=null) {
             this._name = name;
 
@@ -57,6 +60,8 @@ namespace celestials.entities {
 
             this._isLoaded = false;
 
+            this._callbacksRegistry = new Dictionary();
+
 
             //setup with data, if applicable
             if(this._data != null) {
@@ -83,6 +88,9 @@ namespace celestials.entities {
                 return this._imagesLookup.getValue(key);
         }
 
+        public setName(name:string) {
+            this._name = name;
+        }
 
         public flipX() {
             //flip the entity
@@ -94,6 +102,25 @@ namespace celestials.entities {
             this._direction.x = value;
             let deg = this._direction.x == 1 ? 0 : 180;
             this._node.style.transform = `rotateY(${deg}deg)`;
+        }
+
+        public callListeners() {
+            for(let html of this._callbacksRegistry.List)
+                for(let func of html)
+                    func();
+        }
+
+
+        public registerListener(node:HTMLElement, func:Function) {
+            //look for entry
+            if(this._callbacksRegistry.containsKey(node)) {
+                //add to preexisitng registry
+                this._callbacksRegistry.getValue(node).push(func);
+            }
+        }
+        public removeListeners(node:HTMLElement) {
+            if(this._callbacksRegistry.containsKey(node))
+                this._callbacksRegistry.remove(node);
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/

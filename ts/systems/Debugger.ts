@@ -52,6 +52,9 @@ namespace celestials.systems {
             let celestialsPanelKey = [Key.Code.m];
             InputManager.addBinding("debug__openCelestialsPanel", new KeyBinding(this._openCelestialsPanel.bind(this), KeyBinding.State.Down, ...celestialsPanelKey));
 
+            let currentCelestialsPanelKey = [Key.Code.comma];
+            InputManager.addBinding("debug__openCurrentCelestialsPanel", new KeyBinding(this._openCurrentCelestialsPanel.bind(this), KeyBinding.State.Down, ...currentCelestialsPanelKey));
+
             let notificationPanelKey = [Key.Code.j];
             InputManager.addBinding("debug__showNotificationPanel", new KeyBinding(this._openNotificationPanel.bind(this), KeyBinding.State.Down, ...notificationPanelKey));
 
@@ -125,6 +128,9 @@ namespace celestials.systems {
         }
         private _openCelestialsPanel() {
             ui.menus.CelestialsPanel.show();
+        }
+        private _openCurrentCelestialsPanel() {
+            ui.menus.CurrentCelestialsPanel.show();
         }
         private _openNotificationPanel() {
             ui.menus.NotificationPanel.show();

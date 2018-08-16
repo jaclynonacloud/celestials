@@ -5,6 +5,12 @@ namespace celestials.managers{
     import Celestial = entities.Celestial;
     import ICelestial = entities.ICelestial;
 
+    export interface ICelestialsChange {
+        add?:Celestial;
+        delete?:Celestial;
+        change?:Celestial;
+    }
+
     export class CelestialsManager {
         private static _instance:CelestialsManager;
         private static _lookup:Dictionary<string, Celestial>;
@@ -16,6 +22,9 @@ namespace celestials.managers{
         private _templates:Celestial[];
         private _celestials:Celestial[];
 
+        //functions to call if they are listening to celestial changes
+        private _changeRegistry:Function[];
+
         constructor() {
             CelestialsManager._instance = this;
             CelestialsManager._lookup = new Dictionary<string, Celestial>();
@@ -26,7 +35,9 @@ namespace celestials.managers{
 
 
             this._templates = new Array<Celestial>();
-            this._celestials = new Array<Celestial>();            
+            this._celestials = new Array<Celestial>();          
+            
+            this._changeRegistry = new Array<Function>();
         }
 
 
@@ -57,7 +68,7 @@ namespace celestials.managers{
             
             //TODO: load a random unlocked celestial
             if(CelestialsManager._lookup.containsKey("solaris"))
-                CelestialsManager.addCelestial("solaris");
+                await CelestialsManager.addCelestial("solaris");
 
 
             //listen to bounds leave -- call up event if we leave
@@ -91,10 +102,13 @@ namespace celestials.managers{
                 }
 
                 let copy:Celestial = celestial.clone();
-                if(copy.load()) {
-                    await CelestialsManager._instance._celestials.push(copy);
-                    return copy;
-                }
+                copy.load()
+                    .then(() => {
+                        console.log("CREATED COPY")
+                        CelestialsManager._instance._celestials.push(copy);
+                        CelestialsManager.callChangeRegistry({add:copy});
+                        return copy;
+                    });
             }
             return null;
         }
@@ -114,18 +128,21 @@ namespace celestials.managers{
             return count;
         }
 
-        public static removeCelestial(celestial:Celestial) {
+        public static removeCelestial(celestial:Celestial, callChangeRegistry:boolean = true) {
             let index = CelestialsManager._instance._celestials.indexOf(celestial);
             if(index != -1) {
                 let cel = CelestialsManager._instance._celestials.splice(index, 1)[0];
+                if(callChangeRegistry)
+                    CelestialsManager.callChangeRegistry({delete:cel});
                 cel.remove();
             }
         }
 
         public static removeAllCelestials() {
             for(let celestial of CelestialsManager.Celestials) {
-                this.removeCelestial(celestial);
+                this.removeCelestial(celestial, false);
             }
+            CelestialsManager.callChangeRegistry(null);
         }
 
         public static update() {
@@ -133,6 +150,24 @@ namespace celestials.managers{
             for(let cel of CelestialsManager._instance._celestials)
             if(cel.IsLoaded)
                 cel.update();
+        }
+
+        public static callChangeCelestial(celestial:Celestial) {
+            CelestialsManager.callChangeRegistry({change:celestial});
+        }
+
+
+        public static callChangeRegistry(change:ICelestialsChange) {
+            for(let func of CelestialsManager._instance._changeRegistry)
+                func(change);
+        }
+        public static listenForCelestialChanges(func:Function) {
+            CelestialsManager._instance._changeRegistry.push(func);
+        }
+        public static removeListenForCelestialChanges(func:Function) {
+            let index:number = CelestialsManager._instance._changeRegistry.indexOf(func);
+            if(index != -1)
+                CelestialsManager._instance._changeRegistry.splice(index, 1);
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/

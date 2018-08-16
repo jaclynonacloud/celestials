@@ -4,7 +4,7 @@
 		"sourceMap": true,
 		"module": "amd",
 		"lib": ["es6" , "dom"],
-		"outFile": "bin/js/celestials.js",
-		"removeComments": true,
+		"outFile": "public/js/celestials.js",
+		"removeComments": true
 	}
 }

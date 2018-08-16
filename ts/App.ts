@@ -18,6 +18,7 @@
 ///<reference path="./components/ui/menus/contexts/ApplicationContext.ts" />
 ///<reference path="./components/ui/menus/statics/ControlPanel.ts" />
 ///<reference path="./components/ui/menus/statics/CelestialsPanel.ts" />
+///<reference path="./components/ui/menus/statics/CurrentCelestialsPanel.ts" />
 ///<reference path="./components/ui/menus/statics/NotificationBar.ts" />
 ///<reference path="./components/ui/menus/statics/NotificationPanel.ts" />
 ///<reference path="./components/ui/menus/overlays/Tooltip.ts" />
@@ -56,18 +57,21 @@ namespace celestials {
 
 
             //set the contexts
-            new ui.menus.CelestialContext(document.querySelector(".context-menu.celestial"));
-            new ui.menus.ApplicationContext(document.querySelector(".context-menu.application"));
+            await  new ui.menus.CelestialContext(document.querySelector(".context-menu.celestial"));
+            await new ui.menus.ApplicationContext(document.querySelector(".context-menu.application"));
             //set the statics
-            new ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds"));
-            new ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel"));
-            new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
-            new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
-            new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
+            await new ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds"));
+            await new ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel"));
+            await new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
+            await new ui.menus.CurrentCelestialsPanel(document.querySelector(".overlay-menu.current-celestials"));
+            await new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
+            await new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
 
             //test
             systems.Notifications.addNotification("This is a test!", systems.Notifications.TYPE.Notify);
             systems.Notifications.addNotification("This is a test for failure!", systems.Notifications.TYPE.Fail);
+
+            ui.menus.CurrentCelestialsPanel.show()
             
 
             
@@ -81,7 +85,7 @@ namespace celestials {
             let debug = await new systems.Debugger();
             
             
-            // return;
+            return;
 
             //create update loop
             setInterval(() => {

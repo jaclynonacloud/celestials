@@ -4,6 +4,7 @@ namespace celestials.entities {
 
     export interface ICelestial extends IEntity {
         lookup?:string;
+        presets?:string[];
         scale?:{min:number, max:number};
         maxSpawns?:number;
         zIndex?:number;
@@ -28,6 +29,7 @@ namespace celestials.entities {
         private _logic:logic.CelestialLogic;
 
         private _scale:number;
+        private _dateSpawned:Date;
         private _eventsRegistry:Dictionary<string, any>;
 
         private _paused:boolean;
@@ -43,6 +45,9 @@ namespace celestials.entities {
 
             this._paused = false;
             this._isControlled = false;
+
+            //get the date
+            this._dateSpawned = new Date();
 
             //add name to node
             this._node.dataset.name = this.Name;
@@ -115,6 +120,11 @@ namespace celestials.entities {
         }
 
 
+        public setName(name:string) {
+            super.setName(name);
+            managers.CelestialsManager.callChangeCelestial(this);
+        }
+
         public setZIndex(index:number) {
             this.setZIndexTemp(index);
             this.Data.zIndex = index;
@@ -179,11 +189,8 @@ namespace celestials.entities {
          * Loads the Celestial's graphics and other data.
          */
         public async load() {
-            await super.load();
-
-
-
-            return new Promise(async (resolve, reject) => {
+            return await new Promise(async (resolve, reject) => {
+                await super.load();
                 try {
                     let data:ICelestial = this._data;
                     //create logic
@@ -195,6 +202,11 @@ namespace celestials.entities {
                     //set the scale
                     this._scale = randomRange(data.scale.min, data.scale.max);
                     // this._scale = 1;
+                    //pick a preset name, if defined
+                    if(this.Data.presets != null) {
+                        //pick a name!
+                        this.setName(this.Data.presets[randomRangeInt(0, this.Data.presets.length-1)]);
+                    }
 
 
                     //destructure data
@@ -215,10 +227,9 @@ namespace celestials.entities {
                                         //listen for load
                                         img.onload = () => {
                                             //set the image
-                                            console.log("loaded image!");
-                                            // imgData.src = img.src;
-                                            if(!this.addImage(imgData.name, img.src))
-                                                throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
+                                            this.addImage(imgData.name, img.src)
+                                            // if(!this.addImage(imgData.name, img.src))
+                                            //     throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
                                             res();
                                         }
                                         //load the image
@@ -243,7 +254,6 @@ namespace celestials.entities {
                                         img.onload = () => {
                                             //set each frame
                                             for(let frame of spritesheet.frames) {
-                                                console.log("loaded sprite!");
                                                 //give the chop
                                                 cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
                                                     //set as the image
@@ -292,6 +302,7 @@ namespace celestials.entities {
                     this._overlayMenu = new ui.menus.CelestialOverlay(this);
                     this._node.parentNode.appendChild(this._overlayMenu.Node);
 
+                    console.log("LOADED ALL OF : " + this.Name);
                     resolve();
                     this._isLoaded = true;
 
@@ -412,8 +423,10 @@ namespace celestials.entities {
         public get Sequencer():engines.CelestialSequencer { return this._sequencer; }
         public get Physics():engines.Physics { return this._physics; }
         public get Logic():logic.CelestialLogic { return this._logic; }
+
         public get Paused():boolean { return this._paused; }
         public get IsControlled():boolean { return this._isControlled; }
+        public get DateSpawned():Date { return this._dateSpawned; }
 
         // public get Icon():string {
         //     if(this._imagesLookup.containsKey("icon"))
