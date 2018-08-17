@@ -76,8 +76,6 @@ namespace celestials {
             this._callback = callback;
             this._state = state;
 
-            console.log("STATE: " + this._state);
-
             //set the keys
             this._keys = key;
             this._keysPressed = Array<boolean>();

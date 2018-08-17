@@ -477,6 +477,8 @@ namespace celestials.logic {
         }
 
 
+        public get AttentionSpan():number { return this._attentionSpan; }
     }
+
     
 }

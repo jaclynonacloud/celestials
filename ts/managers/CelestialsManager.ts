@@ -107,6 +107,10 @@ namespace celestials.managers{
                         console.log("CREATED COPY")
                         CelestialsManager._instance._celestials.push(copy);
                         CelestialsManager.callChangeRegistry({add:copy});
+
+                        //TEST
+                        ui.menus.CelestialDetails.show(copy);
+                        
                         return copy;
                     });
             }

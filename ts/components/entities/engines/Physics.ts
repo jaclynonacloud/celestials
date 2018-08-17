@@ -170,6 +170,7 @@ namespace celestials.engines {
         /*---------------------------------------------- EVENTS --------------------------------------*/
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
         public get Velocity():IPoint { return {x:this._velocity.x, y:this._velocity.y}; }
+        public get Gravity():number { return this._gravity; }
         public get LastTouchedWall():number { return this._touchedWall; }
 
 

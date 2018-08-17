@@ -19,6 +19,7 @@
 ///<reference path="./components/ui/menus/statics/ControlPanel.ts" />
 ///<reference path="./components/ui/menus/statics/CelestialsPanel.ts" />
 ///<reference path="./components/ui/menus/statics/CurrentCelestialsPanel.ts" />
+///<reference path="./components/ui/menus/statics/CelestialDetails.ts" />
 ///<reference path="./components/ui/menus/statics/NotificationBar.ts" />
 ///<reference path="./components/ui/menus/statics/NotificationPanel.ts" />
 ///<reference path="./components/ui/menus/overlays/Tooltip.ts" />
@@ -64,14 +65,13 @@ namespace celestials {
             await new ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel"));
             await new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
             await new ui.menus.CurrentCelestialsPanel(document.querySelector(".overlay-menu.current-celestials"));
+            await new ui.menus.CelestialDetails(document.querySelector(".overlay-menu.celestial-details"));
             await new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
             await new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
 
             //test
             systems.Notifications.addNotification("This is a test!", systems.Notifications.TYPE.Notify);
             systems.Notifications.addNotification("This is a test for failure!", systems.Notifications.TYPE.Fail);
-
-            ui.menus.CurrentCelestialsPanel.show()
             
 
             

@@ -17,6 +17,7 @@ namespace celestials.engines {
         transitionStates:string[]; //holds names to states that can be switched to next /*If none are supplied, the default states will be used.*/
         special?:boolean; //marks whether a sequence can be selected, or must be called
         runOnce?:boolean; //marks whether a sequence only runs through its frames once /*Overrides any separate sequence controllers like looping or duration.*/
+        canBeFavourite?:boolean; //marks whether a sequence can be a favourite action -- used in the details panel.  Uses attention span to calculate.
         sequences:ICelestialSequence[];
     }
     export interface ICelestialSequence {
@@ -107,6 +108,11 @@ namespace celestials.engines {
         }
         private _changeToFallbackState(state:string) {
             return this.changeState(state);
+        }
+
+        public getStateByName(state:string):ICelestialSequenceSet {
+            if(this._sequences[state] != null) return this._sequences[state] as ICelestialSequenceSet
+            return null;
         }
 
         /**

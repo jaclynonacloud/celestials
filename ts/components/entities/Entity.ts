@@ -176,6 +176,8 @@ namespace celestials.entities {
             return this._height;
         }
 
+        public get MainImage():HTMLImageElement { return this._mainImage; }
+
         public get IsLoaded():boolean {
             return this._isLoaded;
         }

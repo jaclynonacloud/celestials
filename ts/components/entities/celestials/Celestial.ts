@@ -29,6 +29,7 @@ namespace celestials.entities {
         private _logic:logic.CelestialLogic;
 
         private _scale:number;
+        private _size:number; //created once loaded first logic on height of img vs height of screen
         private _dateSpawned:Date;
         private _eventsRegistry:Dictionary<string, any>;
 
@@ -45,6 +46,7 @@ namespace celestials.entities {
 
             this._paused = false;
             this._isControlled = false;
+            this._size = 0;
 
             //get the date
             this._dateSpawned = new Date();
@@ -303,6 +305,7 @@ namespace celestials.entities {
                     this._node.parentNode.appendChild(this._overlayMenu.Node);
 
                     console.log("LOADED ALL OF : " + this.Name);
+                    this._size = (this.Height / App.Bounds.Height) * this._scale;
                     resolve();
                     this._isLoaded = true;
 
@@ -427,6 +430,63 @@ namespace celestials.entities {
         public get Paused():boolean { return this._paused; }
         public get IsControlled():boolean { return this._isControlled; }
         public get DateSpawned():Date { return this._dateSpawned; }
+        public get Scale():number { return this._scale; }
+        public get Size():number { return this._size * App.Bounds.Height; }
+        public get Mass():number {
+            return this._size * this._physics.Gravity;
+        }
+        public get Age():number {
+            let fakeDate = new Date("August 16, 2018");
+            return (((new Date()).getTime() - fakeDate.getTime()) / 1000 / 60 / 60);
+        }
+
+        public get FavouriteSequence():string {
+            let sequence:engines.ICelestialSequenceSet = null;
+            let name:string = "None";
+            for(let key of Object.keys(engines.CelestialSequencer.STATE)) {
+                let state = engines.CelestialSequencer.STATE[key];
+                let seq = this._sequencer.getStateByName(state);
+                if(seq != null) {
+                    console.log("CHECKING: " + key + ", " + seq.attentionSpan);
+                    if(sequence == null) {
+                        // sequence = seq;
+                    }
+                    else if(seq.attentionSpan > sequence.attentionSpan) {
+                        if(seq.canBeFavourite == null || seq.canBeFavourite) {
+                            sequence = seq;
+                        }
+                    }
+
+                    name = key;
+                    // if(sequence == null) {
+                    //     // if(!seq.canBeFavourite) continue;
+                    //     sequence = seq;
+                    //     continue;
+                    // }
+                    // if(seq.attentionSpan > sequence.attentionSpan) {
+                    //     console.log("CHECKING: " + key);
+                    //     //check if this can be favourite
+                    //     // if(!seq.canBeFavourite) continue;
+                    //     sequence = seq;
+                    //     name = key;
+                    // }
+                }
+            }
+
+            return name;
+        }
+        public get AvailableSequences():string[] {
+            let sequences = new Array<string>();
+            for(let key of Object.keys(engines.CelestialSequencer.STATE)) {
+                let state = engines.CelestialSequencer.STATE[key];
+                let seq = this._sequencer.getStateByName(state);
+                if(seq != null) {
+                    sequences.push(key);
+                }
+            }
+
+            return sequences;
+        }
 
         // public get Icon():string {
         //     if(this._imagesLookup.containsKey("icon"))
