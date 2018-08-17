@@ -138,6 +138,10 @@ namespace celestials.managers{
                 let cel = CelestialsManager._instance._celestials.splice(index, 1)[0];
                 if(callChangeRegistry)
                     CelestialsManager.callChangeRegistry({delete:cel});
+                //if we were the active celestial in the detail panel, close the panel
+                if(ui.menus.CelestialDetails.isShowing)
+                    if(ui.menus.CelestialDetails.CurrentCelestial == cel)
+                        ui.menus.CelestialDetails.hide();
                 cel.remove();
             }
         }

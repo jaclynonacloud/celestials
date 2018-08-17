@@ -6,12 +6,14 @@ namespace celestials.entities {
         lookup?:string;
         presets?:string[];
         scale?:{min:number, max:number};
+        variation?:number;
         maxSpawns?:number;
         zIndex?:number;
         icon?:string;
         images?:{name:string, path:string}[];
         spritesheets?:ISpritesheet[];
         physics?:engines.IPhysics;
+        moods?:engines.IMoods;
         logic?:logic.ICelestialLogic;
         sequences?:engines.ICelestialSequences;
 
@@ -26,11 +28,14 @@ namespace celestials.entities {
 
         private _sequencer:engines.CelestialSequencer;
         private _physics:engines.Physics;
+        private _moods:engines.Moods;
         private _logic:logic.CelestialLogic;
 
         private _scale:number;
+        private _variation:number;
         private _size:number; //created once loaded first logic on height of img vs height of screen
         private _dateSpawned:Date;
+        private _spawnedBy:Celestial;
         private _eventsRegistry:Dictionary<string, any>;
 
         private _paused:boolean;
@@ -48,8 +53,10 @@ namespace celestials.entities {
             this._isControlled = false;
             this._size = 0;
 
+            
             //get the date
             this._dateSpawned = new Date();
+            this._spawnedBy = null;
 
             //add name to node
             this._node.dataset.name = this.Name;
@@ -126,6 +133,9 @@ namespace celestials.entities {
             super.setName(name);
             managers.CelestialsManager.callChangeCelestial(this);
         }
+        public setSpawnParent(celestial:Celestial) {
+            this._spawnedBy = celestial;
+        }
 
         public setZIndex(index:number) {
             this.setZIndexTemp(index);
@@ -199,10 +209,14 @@ namespace celestials.entities {
                     this._sequencer = new engines.CelestialSequencer(this);
                     //create physics
                     this._physics = new engines.Physics(this);
+                    //create moods
+                    this._moods = new engines.Moods(this);
                     //create logic
                     this._logic = new logic.CelestialLogic(this, this.Data.logic || null);
                     //set the scale
                     this._scale = randomRange(data.scale.min, data.scale.max);
+                    //set the variation
+                    this._variation = randomRange(0, data.variation || 0);
                     // this._scale = 1;
                     //pick a preset name, if defined
                     if(this.Data.presets != null) {
@@ -298,6 +312,8 @@ namespace celestials.entities {
 
 
                     console.log(this._imagesLookup.FullList);
+                    //load the moods
+                    await this._moods.load();
                     //load the first logic
                     await this._logic.load();
                     //DEBUG: Created a ui menu item to show current controls
@@ -375,6 +391,7 @@ namespace celestials.entities {
                 // console.log("DRAW");
                 await this._physics.update();
                 // console.log("PHYSICS");
+                await this._moods.update();
             }
 
 
@@ -425,12 +442,15 @@ namespace celestials.entities {
         public get Data():ICelestial { return this._data as ICelestial; }
         public get Sequencer():engines.CelestialSequencer { return this._sequencer; }
         public get Physics():engines.Physics { return this._physics; }
+        public get Moods():engines.Moods { return this._moods; }
         public get Logic():logic.CelestialLogic { return this._logic; }
 
         public get Paused():boolean { return this._paused; }
         public get IsControlled():boolean { return this._isControlled; }
         public get DateSpawned():Date { return this._dateSpawned; }
         public get Scale():number { return this._scale; }
+        public get Variation():number { return this._variation; }
+        public get GlobalVariation():number { return this.Data.variation || 0; }
         public get Size():number { return this._size * App.Bounds.Height; }
         public get Mass():number {
             return this._size * this._physics.Gravity;
@@ -447,34 +467,21 @@ namespace celestials.entities {
                 let state = engines.CelestialSequencer.STATE[key];
                 let seq = this._sequencer.getStateByName(state);
                 if(seq != null) {
-                    console.log("CHECKING: " + key + ", " + seq.attentionSpan);
                     if(sequence == null) {
-                        // sequence = seq;
+                        sequence = seq;
+                        name = key;
                     }
                     else if(seq.attentionSpan > sequence.attentionSpan) {
-                        if(seq.canBeFavourite == null || seq.canBeFavourite) {
-                            sequence = seq;
-                        }
+                        let canBeFavourite = (seq.canBeFavourite == undefined) ? true : seq.canBeFavourite;
+                        if(!canBeFavourite) continue;
+                        sequence = seq;
+                        name = key;
                     }
-
-                    name = key;
-                    // if(sequence == null) {
-                    //     // if(!seq.canBeFavourite) continue;
-                    //     sequence = seq;
-                    //     continue;
-                    // }
-                    // if(seq.attentionSpan > sequence.attentionSpan) {
-                    //     console.log("CHECKING: " + key);
-                    //     //check if this can be favourite
-                    //     // if(!seq.canBeFavourite) continue;
-                    //     sequence = seq;
-                    //     name = key;
-                    // }
                 }
             }
-
             return name;
         }
+
         public get AvailableSequences():string[] {
             let sequences = new Array<string>();
             for(let key of Object.keys(engines.CelestialSequencer.STATE)) {
@@ -487,6 +494,8 @@ namespace celestials.entities {
 
             return sequences;
         }
+
+        public get SpawnedBy():Celestial { return this._spawnedBy; }
 
         // public get Icon():string {
         //     if(this._imagesLookup.containsKey("icon"))

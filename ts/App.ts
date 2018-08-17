@@ -33,11 +33,15 @@ namespace celestials {
         private static _paused:boolean;
         private static _usingRemote:boolean;
 
+        private static _usesMood:boolean;
+
         constructor(win:Window, node:HTMLElement) {
             App._instance = this;
             App._window = win;
             App._node = node;
             App._paused = false;
+
+            App._usesMood = false;
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -126,6 +130,10 @@ namespace celestials {
          */
         public static get MousePosition():IPoint { return managers.MouseManager.MousePosition; }
         public static get Paused():boolean { return App._paused; }
+
+
+        public static get UsesMood():boolean { return App._usesMood; }
+        public static set UsesMood(value:boolean) { App._usesMood = value; }
 
         
     }
