@@ -60,6 +60,9 @@ namespace celestials.systems {
 
             let addNotificationKey = [Key.Code.n];
             InputManager.addBinding("debug__addNotification", new KeyBinding(this._addNotification.bind(this), KeyBinding.State.Down, ...addNotificationKey));
+
+            let deleteLastCelestialKey = [Key.Code["numpad 0"]];
+            InputManager.addBinding("debug__deleteLastCelestial", new KeyBinding(this._deleteLastCelestial.bind(this), KeyBinding.State.Down, ...deleteLastCelestialKey));
         }
 
 
@@ -139,6 +142,9 @@ namespace celestials.systems {
         private _addNotification() {
             systems.Notifications.addNotification("This is a test notification!");
         }
+
+        private _deleteLastCelestial() {
+            managers.CelestialsManager.removeCelestial(managers.CelestialsManager.Celestials[managers.CelestialsManager.Celestials.length-1]);        }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         /*---------------------------------------------- EVENTS --------------------------------------*/
