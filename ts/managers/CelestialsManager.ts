@@ -109,7 +109,7 @@ namespace celestials.managers{
                         CelestialsManager.callChangeRegistry({add:copy});
 
                         //TEST
-                        ui.menus.CelestialDetails.show(copy);
+                        // ui.menus.CelestialDetails.show(copy);
                         
                         return copy;
                     });

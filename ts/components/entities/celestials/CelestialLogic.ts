@@ -41,6 +41,7 @@ namespace celestials.logic {
                 if(eagerness != null) this._eagerness = clamp(eagerness, 1, 100);
                 if(attentionSpan != null) this._attentionSpan = clamp(attentionSpan, 0, 100);
             }
+
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -110,6 +111,29 @@ namespace celestials.logic {
         }
 
         /**
+         * Attempts to start a state by the name given.  If it cannot start the state, this function will return false.
+         * @param stateName The name of the state to start.  Please use class constants.  engines.CelestialSequencer.STATE.
+         */
+        public startState(stateName:string) {
+            //attempt to switch logic to this state
+            let state = this._celestial.Sequencer.changeState(stateName);
+            if(state != null) {
+                if(state != stateName) return false;
+                let sequence = this._celestial.Sequencer.getRandomStateSequence(state);
+                if(sequence != null) {
+                    this._celestial.Sequencer.changeSequence(sequence);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public tryEndState(stateName:string) {
+            if(this._celestial.Sequencer.isCurrentState(stateName))
+                this.nextState();
+        }
+
+        /**
          * Called by Physics engine when wall is hit.
          * @param which The wall that was hit.  Defined by Physics.Wall
          */
@@ -122,15 +146,8 @@ namespace celestials.logic {
             if(which == Physics.WALL.Bottom && this._celestial.Sequencer.isCurrentState(engines.CelestialSequencer.STATE.Fall)) {
                 console.log("CALLED");
                 //look for a recover state
-                let state:string = this._celestial.Sequencer.changeState(engines.CelestialSequencer.STATE.Recover);
-                //if we can't recover, just go to next state
-                if(state != engines.CelestialSequencer.STATE.Recover) {
+                if(!this.startState(engines.CelestialSequencer.STATE.Recover))
                     this.next();
-                }
-                //otherwise, change the sequence
-                let sequence = this._celestial.Sequencer.getRandomStateSequence(state);
-                if(sequence != null)
-                    this._celestial.Sequencer.changeSequence(sequence);
             }
         }
 
@@ -300,6 +317,11 @@ namespace celestials.logic {
             return new Promise(async(resolve, reject) => {
 
                 try {
+                    //vary properties
+                    this._attentionSpan = clamp(this._attentionSpan + randomRange(-this._celestial.Variation, this._celestial.Variation), 0, 100);
+
+
+
                     //set the first sequence
                     // let state:string = this._celestial.Sequencer.changeState(this._celestial.Sequencer.getRandomState());
                     //TODO: find out the spawn location of the celestial to see what sequence we can spawn with
@@ -409,6 +431,16 @@ namespace celestials.logic {
 
         /**How the fall is handled every update. */
         private _handleFalls() {
+            let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
+            // this._celestial.Physics.setGravity(0);
+            // //get the hang properties
+            // let moveSpeed:number = frame.moveSpeed || 2;
+            // //set the properties
+            // this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
+        }
+
+        /**How the hold is handled every update. */
+        private _handleHolds() {
             let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
             // this._celestial.Physics.setGravity(0);
             // //get the hang properties

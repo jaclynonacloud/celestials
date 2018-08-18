@@ -89,7 +89,7 @@ namespace celestials {
             let debug = await new systems.Debugger();
             
             
-            return;
+            // return;
 
             //create update loop
             setInterval(() => {

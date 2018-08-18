@@ -14,6 +14,7 @@ namespace celestials.entities {
         spritesheets?:ISpritesheet[];
         physics?:engines.IPhysics;
         moods?:engines.IMoods;
+        relationships?:engines.IRelationships;
         logic?:logic.ICelestialLogic;
         sequences?:engines.ICelestialSequences;
 
@@ -40,6 +41,7 @@ namespace celestials.entities {
 
         private _paused:boolean;
         private _isControlled:boolean; //true when user is controlling the celestial, such as dragging \\ limited movements
+        private _icon:HTMLImageElement;
 
         //debug
         private _overlayMenu:ui.menus.CelestialOverlay;
@@ -316,6 +318,36 @@ namespace celestials.entities {
                     await this._moods.load();
                     //load the first logic
                     await this._logic.load();
+
+
+
+
+
+                    //fix image problem
+                    (this._node.querySelector(".graphics") as HTMLElement).ondragstart = function() { return false; }
+                    //vary colour
+                    let hueVariation:number = randomRange(-this.GlobalVariation * 10, this.GlobalVariation * 10);
+                    this._mainImage.style.filter = `hue-rotate(${hueVariation}deg)`;
+                    
+                    //set icon
+                    if(this.Data.icon != null) {
+                        await new Promise((res, rej) => {
+                            let iconImg = document.createElement("img");
+
+                            iconImg.onload = () => {
+                                this._icon = iconImg;
+                                this._icon.style.filter = this._mainImage.style.filter;
+                                res();
+                            }
+                            iconImg.onerror = () => { rej("Could not load icon on : " + this.Name); }
+
+                            iconImg.src = data.path + this.Data.icon ;
+
+                        });
+                        
+                    }
+                    else this._icon = this.MainImage.cloneNode(false) as HTMLImageElement;
+
                     //DEBUG: Created a ui menu item to show current controls
                     this._overlayMenu = new ui.menus.CelestialOverlay(this);
                     this._node.parentNode.appendChild(this._overlayMenu.Node);
@@ -330,8 +362,6 @@ namespace celestials.entities {
                     //create context menu
                     // ui.CelestialContext.show(this);
 
-                    //fix image problem
-                    (this._node.querySelector(".graphics") as HTMLElement).ondragstart = function() { return false; }
                     
 
                     //wire listeners
@@ -342,9 +372,16 @@ namespace celestials.entities {
                     //TODO I've setup the click event, don't readd unless removing this one
                     // managers.MouseManager.listenForMouseDown(this._node, (e) => this._onClicked(e));
                     managers.MouseManager.listenForDrag(this._node,
-                        (x,y) => managers.CelestialsManager.onGrab(this, x, y),
+                        (x,y) => {
+                            managers.CelestialsManager.onGrab(this, x, y);
+                            //start hold sequence, if there is one
+                            this._logic.startState(engines.CelestialSequencer.STATE.Hold);
+                        },
                         (x,y) => managers.CelestialsManager.onDrag(this, x, y),
-                        (x,y) => managers.CelestialsManager.onDrop(this, x, y)
+                        (x,y) => {
+                            managers.CelestialsManager.onDrop(this, x, y);
+                            this._logic.tryEndState(engines.CelestialSequencer.STATE.Hold);
+                        }
                     );
                     //on right click, show context menu
                     managers.MouseManager.listenForRightClick(this._node, () => ui.menus.CelestialContext.show(this));
@@ -444,6 +481,7 @@ namespace celestials.entities {
         public get Physics():engines.Physics { return this._physics; }
         public get Moods():engines.Moods { return this._moods; }
         public get Logic():logic.CelestialLogic { return this._logic; }
+        public get Icon():HTMLImageElement { return this._icon; }
 
         public get Paused():boolean { return this._paused; }
         public get IsControlled():boolean { return this._isControlled; }
@@ -456,8 +494,9 @@ namespace celestials.entities {
             return this._size * this._physics.Gravity;
         }
         public get Age():number {
-            let fakeDate = new Date("August 16, 2018");
-            return (((new Date()).getTime() - fakeDate.getTime()) / 1000 / 60 / 60);
+            // let fakeDate = new Date("August 16, 2018");
+            // return (((new Date()).getTime() - fakeDate.getTime()) / 1000 / 60 / 60);
+            return (((new Date()).getTime() - this._dateSpawned.getTime()) / 1000 / 60 / 60);
         }
 
         public get FavouriteSequence():string {
