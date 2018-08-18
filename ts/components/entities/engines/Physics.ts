@@ -53,6 +53,7 @@ namespace celestials.engines {
         public zeroVelocity() {
             this._velocity.x = 0;
             this._velocity.y = 0;
+            console.log("ZEROED OUT")
         }
         public setGravity(value:number) {
             this._gravity = value;

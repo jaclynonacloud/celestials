@@ -132,6 +132,25 @@ namespace celestials {
         }
     }
 
+    export class Queue<T> {
+        private _list:T[];
+        constructor() {
+            this._list = new Array<T>();
+        }
+
+        public enqueue(item:T) {
+            this._list.push(item);
+        }
+        public dequeue():T {
+            return this._list.splice(0, 1)[0];
+        }
+        public clear() {
+            this._list = new Array<T>();
+        }
+
+        public get List():T[] { return this._list; }
+    }
+
     /**
      * Creates a rectangle object.
      */

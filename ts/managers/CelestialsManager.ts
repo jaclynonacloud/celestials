@@ -188,8 +188,6 @@ namespace celestials.managers{
             cel.Physics.zeroVelocity();
         }
         public static onDrag(cel:Celestial, x:number, y:number) {
-            console.log(cel.Name);
-            console.log("DRAGGING: ", x, y);
             //get position
             x = x;
             y += (cel.Height * cel.RegistrationPoint.y);
@@ -197,7 +195,7 @@ namespace celestials.managers{
             cel.X = x;
             cel.Y = y;
         }
-        public static onDrop(cel:Celestial, x:number, y:number) {
+        public static async onDrop(cel:Celestial, x:number, y:number) {
             console.log("DROPPED");
             cel.releaseControl();
             cel.Physics.resetGravity();
@@ -210,8 +208,11 @@ namespace celestials.managers{
             let flingY:number = ((y - lastY) / App.Bounds.Height) * App.Bounds.Height;
 
             cel.Physics.zeroVelocity();
-            cel.Physics.addForceX(flingX);
+            cel.Physics.addForceX(flingX * 1.2);
             cel.Physics.addForceY(flingY);
+
+            console.log("FLING: ", flingX, flingY);
+            console.log(cel.Physics.Velocity);
 
             //change forward direction
             if(flingX != 0) {

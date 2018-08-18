@@ -380,7 +380,7 @@ namespace celestials.entities {
                         (x,y) => managers.CelestialsManager.onDrag(this, x, y),
                         (x,y) => {
                             managers.CelestialsManager.onDrop(this, x, y);
-                            this._logic.tryEndState(engines.CelestialSequencer.STATE.Hold);
+                            // this._logic.tryEndState(engines.CelestialSequencer.STATE.Hold);
                         }
                     );
                     //on right click, show context menu
@@ -419,7 +419,7 @@ namespace celestials.entities {
             await this._logic.update();
 
             //if we have taken control, only render the first frame
-            if(!this._isControlled) {
+            // if(!this._isControlled) {
 
                 // console.log("LOGIC");
                 await this._sequencer.update();
@@ -429,7 +429,7 @@ namespace celestials.entities {
                 await this._physics.update();
                 // console.log("PHYSICS");
                 await this._moods.update();
-            }
+            // }
 
 
             this._overlayMenu.update();

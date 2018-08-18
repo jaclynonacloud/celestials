@@ -18,6 +18,7 @@ namespace celestials.engines {
         special?:boolean; //marks whether a sequence can be selected, or must be called
         runOnce?:boolean; //marks whether a sequence only runs through its frames once /*Overrides any separate sequence controllers like looping or duration.*/
         canBeFavourite?:boolean; //marks whether a sequence can be a favourite action -- used in the details panel.  Uses attention span to calculate.
+        isGrounded?:boolean; //marks whether this sequence set needs to be on the ground to take place
         sequences:ICelestialSequence[];
     }
     export interface ICelestialSequence {
@@ -214,8 +215,6 @@ namespace celestials.engines {
 
             return new Promise((resolve, reject) => {
                 try {
-                    //set the image
-                    let key:string = this._currentSequence.frames[this._frameIndex].name;
                     this._holdIndex++;
                     this._totalIndex++;
 
@@ -226,9 +225,17 @@ namespace celestials.engines {
                         this._holdIndex = 0;
                     }
                     //see if this is a looping sequence
+                    // if(this._frameIndex > this._currentSequence.frames.length-1) {
+                    //     if(this._currentSequence.looping && !(this.CurrentSequenceSet.runOnce || true)) //just reset the index
+                    //         this._frameIndex = 0;
+                    //     else //end the sequence
+                    //         this.completeSequence();
+                    // }
                     if(this._frameIndex > this._currentSequence.frames.length-1) {
-                        if(this._currentSequence.looping && !(this.CurrentSequenceSet.runOnce || true)) //just reset the index
+                        if(this.CurrentSequenceSet.runOnce) this.completeSequence();
+                        if(this._currentSequence.looping) { //just reset the index
                             this._frameIndex = 0;
+                        }
                         else //end the sequence
                             this.completeSequence();
                     }
