@@ -12,8 +12,8 @@ namespace celestials.managers{
     }
 
     export class CelestialsManager {
-        // public static DEF_SPAWNRATE:number = 30000;
-        public static DEF_SPAWNRATE:number = 200;
+        public static DEF_SPAWNRATE:number = 30000;
+        // public static DEF_SPAWNRATE:number = 200;
         private static _instance:CelestialsManager;
         private static _lookup:Dictionary<string, Celestial>;
         private static _data:Dictionary<string, ICelestial>;
