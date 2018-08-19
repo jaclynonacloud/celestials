@@ -128,11 +128,6 @@ namespace celestials.managers{
                         //TEST
                         // ui.menus.CelestialDetails.show(copy);
 
-                        //setup collision
-                        systems.Collision.addToCollisionSystem(celestial, (cel) => {
-                            celestial.askToInteractWith(cel);
-                        });
-
                         res(celestial);
                         // return celestial;
                     });

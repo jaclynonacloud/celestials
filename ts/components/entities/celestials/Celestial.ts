@@ -57,6 +57,7 @@ namespace celestials.entities {
         private _spawnedBy:Celestial;
         private _descendants:Celestial[];
 
+        private _collisionObject:systems.ICollisionObject;
         private _interactingWith:Celestial;
         private _interactBurnout:number;
 
@@ -353,7 +354,7 @@ namespace celestials.entities {
             this._interactingWith = celestial;
             console.log("I AM STARTING AN INTERACTION WITH: " + celestial.Name);
             //set burnout
-            this._interactBurnout = ((100-this.Relationships.Attachment) * randomRange(0.7, 1.3));
+            this._interactBurnout = ((100-this.Relationships.Attachment) * randomRange(0.7, 1.3)) * 10;
             console.log("BURNOUT: " + this._interactBurnout);
             //start interact state if there is one, otherwise, default to idle
             //TODO display interaction based on good or bad
@@ -510,7 +511,10 @@ namespace celestials.entities {
                     await this._logic.load();
 
 
-
+                    //send to collision
+                    systems.Collision.addToCollisionSystem(this);
+                    //ask for collision object
+                    this._collisionObject = systems.Collision.getCollisionObject(this);
 
 
                     //fix image problem
@@ -610,6 +614,8 @@ namespace celestials.entities {
                 this.trySpawn();
             }
 
+            let lastPos:IPoint = {x:this.X, y:this.Y};
+
             //update sequence
             // logic > sequencer > draw > physics
             await this._logic.update();
@@ -626,6 +632,18 @@ namespace celestials.entities {
                 // console.log("PHYSICS");
                 await this._moods.update();
             // }
+
+            //if we have moved, test our collision
+            if(this._interactBurnout <= 0) {
+                if(lastPos.x != this.X || lastPos.y != this.Y) {
+                    let collidedWith = systems.Collision.checkCollision(this._collisionObject);
+                    if(collidedWith != null) {
+                         if(!this.askToInteractWith(collidedWith as Celestial))
+                            //if we were rejected, add a bit of a burnout before trying again
+                            this._interactBurnout = randomRange(0.8, 1.2) * 200;
+                    }
+                }
+            }
 
 
             this._interactBurnout--;

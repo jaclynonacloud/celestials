@@ -57,7 +57,7 @@ namespace celestials.logic {
 
             // console.log(`TICK:${this._tick}, ATTENTION:${attention}, SPAN:${attentionSpan}`);
             //check to see if attention span has been surpassed AND/OR we only run this sequence once
-            if((attention > attentionSpan) || this._celestial.Sequencer.CurrentSequenceSet.runOnce) {
+            if((attention > attentionSpan) || this._celestial.Sequencer.CurrentSequenceSet.runOnce || this._celestial.Sequencer.isCurrentState(engines.CelestialSequencer.STATE.Interact)) {
                 //change state
                 this.nextState();
 
