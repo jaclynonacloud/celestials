@@ -57,8 +57,7 @@ namespace celestials.logic {
 
             // console.log(`TICK:${this._tick}, ATTENTION:${attention}, SPAN:${attentionSpan}`);
             //check to see if attention span has been surpassed AND/OR we only run this sequence once
-            if((attention > attentionSpan) || 
-                    ((attention > attentionSpan) && this._celestial.Sequencer.CurrentSequenceSet.runOnce)) {
+            if((attention > attentionSpan) || this._celestial.Sequencer.CurrentSequenceSet.runOnce) {
                 //change state
                 this.nextState();
 
@@ -113,19 +112,25 @@ namespace celestials.logic {
          * Attempts to start a state by the name given.  If it cannot start the state, this function will return false.
          * @param stateName The name of the state to start.  Please use class constants.  engines.CelestialSequencer.STATE.
          */
-        public startState(stateName:string) {
+        public async startState(stateName:string) {
             //attempt to switch logic to this state
-            let state = this._celestial.Sequencer.changeState(stateName);
+            this._pauseIntegrityCheck = true;
+            let state = await this._celestial.Sequencer.changeState(stateName);
             if(state != null) {
-                if(state != stateName) return false;
-                let sequence = this._celestial.Sequencer.getRandomStateSequence(state);
+                if(state != stateName) {
+                    return false;
+                    this._pauseIntegrityCheck = false;
+                }
+                let sequence = await this._celestial.Sequencer.getRandomStateSequence(state);
                 if(sequence != null) {
-                    this._celestial.Sequencer.changeSequence(sequence);
+                    await this._celestial.Sequencer.changeSequence(sequence);
                     //reset tick
                     this._tick = 0;
+                    this._pauseIntegrityCheck = false;
                     return true;
                 }
             }
+            this._pauseIntegrityCheck = false;
             return false;
         }
 
@@ -150,6 +155,10 @@ namespace celestials.logic {
             }
         }
 
+        public updateState() {
+            this._handleStateChange();
+        }
+
         async handleStateChange() {
             this._pauseIntegrityCheck = true;
             //if our state was changed, reset the sequencer
@@ -169,7 +178,7 @@ namespace celestials.logic {
         }
 
         /**State changes.  Any snapping, or setting of initial state data should be set here. */
-        _handleStateChange() {
+        async _handleStateChange() {
             let cs = engines.CelestialSequencer;
             //handle nuances between state
             let lastState:string = this._celestial.Sequencer.LastState;
@@ -215,7 +224,11 @@ namespace celestials.logic {
                     this._celestial.Physics.zeroVelocity();
                     this._celestial.Physics.setGravity(0);
                     break;
-                    
+                case cs.STATE.Spawn:
+                case cs.STATE.Interact:
+                    this._celestial.Physics.zeroVelocity();
+                    this._celestial.Physics.resetGravity();
+                    break;
 
             }   
 
@@ -223,7 +236,7 @@ namespace celestials.logic {
 
 
         /**State nuances.  How they interact with one another. */
-        _handleStateNuance() {
+        async _handleStateNuance() {
             let cs = engines.CelestialSequencer;
             //handle nuances between state
             let lastState:string = this._celestial.Sequencer.LastState;
@@ -234,7 +247,7 @@ namespace celestials.logic {
             //push off wall, flip direction
             if(lastState == cs.STATE.Climb && currentState == cs.STATE.Hang) {
                 console.log("I AM USING THE NUANCE");
-                this._celestial.flipX();
+                // this._celestial.flipX();
                 this._celestial.Physics.addForceX(randomRange(20, 30) * this._celestial.Direction.x);
             }
         }
@@ -245,11 +258,25 @@ namespace celestials.logic {
          * For example, if we are in a climbing state, but end up off the wall for whatever reason,
          * the state is no longer viable.
          */
-        _handleStateIntegrity(wallHit?:number) {
+        async _handleStateIntegrity(wallHit?:number) {
             let cs = engines.CelestialSequencer;
             //handle nuances between state
             let lastState:string = this._celestial.Sequencer.LastState;
             let currentState:string = this._celestial.Sequencer.CurrentState;
+
+            //if our state is controlled, handle the following FIRST
+            if(this._celestial.IsControlled) {
+                //if we touch the top wall, just start hanging
+                if(this._celestial.Physics.isTouchingWall(engines.Physics.WALL.Top))
+                    if(this._tryToHang(engines.Physics.WALL.Top)) return;
+                //see if we are touching a wall
+                if(this._celestial.Physics.isTouchingWall(Physics.WALL.Left, Physics.WALL.Right)) {
+                    if(!this._tryToClimb(wallHit))
+                        //if we don't want to climb, just flip around
+                        this._celestial.flipX();
+                        return;
+                }
+            }
 
             switch(currentState) {
                 case cs.STATE.Walk:
@@ -292,14 +319,24 @@ namespace celestials.logic {
                     if(this._celestial.Bounds.Bottom < App.Bounds.Bottom) this.nextState();
                     break;
                 case cs.STATE.Hold:
-                    if(!this._celestial.IsControlled) {
-                        console.log("I'VE LOST CONTROL!  SEND IN THE FALL!")
+                    //if we touch the top wall, just start hanging
+                    if(this._celestial.Physics.isTouchingWall(engines.Physics.WALL.Top))
+                        this._tryToHang(engines.Physics.WALL.Top);
+                    //stop the hold if we are not controlled anymore
+                    else if(!this._celestial.IsControlled) {
+                        //if we are in the air, try falling first
                         if(!this._celestial.Physics.isTouchingWall(engines.Physics.WALL.Bottom)) {
                             if(!this.startState(engines.CelestialSequencer.STATE.Fall))
                                 this.nextState(); //fallback
                         }
                         else this.nextState();
                         
+                    }
+                    break;
+                case cs.STATE.Fall:
+                    //if we touched the ceiling, try to hang
+                    if(this._celestial.Physics.isTouchingWall(engines.Physics.WALL.Top)) {
+                        this._tryToHang(engines.Physics.WALL.Top);
                     }
                     break;
             }
@@ -512,9 +549,11 @@ namespace celestials.logic {
         }
 
         private _tryToHang(wallHit?:number):boolean {
+            console.log("SHOULD I HANG? ", wallHit);
             if(wallHit == null) return false;
             if(wallHit != Physics.WALL.Top) return false;
             //TODO see if we want to hang
+            console.log("TEST RANGE");
             if(randomRange(0, 1) > 0) {
                 //get the hang state
                 let state:string = this._celestial.Sequencer.changeState(engines.CelestialSequencer.STATE.Hang);

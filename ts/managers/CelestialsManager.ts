@@ -12,6 +12,8 @@ namespace celestials.managers{
     }
 
     export class CelestialsManager {
+        // public static DEF_SPAWNRATE:number = 30000;
+        public static DEF_SPAWNRATE:number = 200;
         private static _instance:CelestialsManager;
         private static _lookup:Dictionary<string, Celestial>;
         private static _data:Dictionary<string, ICelestial>;
@@ -24,6 +26,9 @@ namespace celestials.managers{
 
         //functions to call if they are listening to celestial changes
         private _changeRegistry:Function[];
+
+        // private _spawnTick:number;
+        private _spawnRate:number;
 
         constructor() {
             CelestialsManager._instance = this;
@@ -38,6 +43,11 @@ namespace celestials.managers{
             this._celestials = new Array<Celestial>();          
             
             this._changeRegistry = new Array<Function>();
+
+
+            // this._spawnTick = 0;
+            //TODO: Set a global spawn rate from a json file
+            this._spawnRate = CelestialsManager.DEF_SPAWNRATE;
         }
 
 
@@ -67,8 +77,10 @@ namespace celestials.managers{
             // }
             
             //TODO: load a random unlocked celestial
+            // if(CelestialsManager._lookup.containsKey("solaris"))
+            //     await CelestialsManager.addCelestialByLookup("solaris");
             if(CelestialsManager._lookup.containsKey("solaris"))
-                await CelestialsManager.addCelestial("solaris");
+                await CelestialsManager.addCelestialByLookup("solaris");
 
 
             //listen to bounds leave -- call up event if we leave
@@ -88,43 +100,64 @@ namespace celestials.managers{
             await CelestialsManager._instance._templates.push(celestial);
         }
 
-        public static async addCelestial(lookup:string, addedByLineage?:boolean) {
+        public static getTemplateByLookup(lookup:string) {
+            if(CelestialsManager._lookup.containsKey(lookup)) return CelestialsManager._lookup.getValue(lookup);
+            return null;
+        }
+
+        public static async addCelestial(celestial:Celestial, addedByLineage?:boolean):Promise<Celestial> {
+            addedByLineage = addedByLineage || false;
+
+            return await new Promise<Celestial>(async(res, rej) => {
+                //test for availability
+                if(celestial.Data.maxSpawns != null) {
+                    if(CelestialsManager.countCelestialsOfType(celestial.Lookup) + 1 > celestial.Data.maxSpawns) {
+                        //only warn about max spawns if USER tried to spawn the celestial
+                        if(!addedByLineage)
+                            systems.Notifications.addNotification(`Max spawns reached for ${celestial.Name}.`, systems.Notifications.TYPE.Fail);
+                        res(null);
+                    }
+                }
+
+                await celestial.load()
+                    .then(() => {
+                        console.log("CREATED COPY")
+                        CelestialsManager._instance._celestials.push(celestial);
+                        CelestialsManager.callChangeRegistry({add:celestial});
+
+                        //TEST
+                        // ui.menus.CelestialDetails.show(copy);
+
+                        //setup collision
+                        systems.Collision.addToCollisionSystem(celestial, (cel) => {
+                            celestial.askToInteractWith(cel);
+                        });
+
+                        res(celestial);
+                        // return celestial;
+                    });
+            });    
+        }
+
+        public static async addCelestialByLookup(lookup:string, addedByLineage?:boolean) {
             addedByLineage = addedByLineage || false;
             //get celestial from lookup
             let celestial:Celestial = CelestialsManager._lookup.getValue(lookup);
             if(celestial != null) {
-                //test for availability
-                if(celestial.Data.maxSpawns != null && !addedByLineage) {
-                    if(CelestialsManager.countCelestials(celestial.Lookup) + 1 > celestial.Data.maxSpawns) {
-                        systems.Notifications.addNotification(`Max spawns reached for ${celestial.Name}.`, systems.Notifications.TYPE.Fail);
-                        return null;
-                    }
-                }
-
-                let copy:Celestial = celestial.clone();
-                copy.load()
-                    .then(() => {
-                        console.log("CREATED COPY")
-                        CelestialsManager._instance._celestials.push(copy);
-                        CelestialsManager.callChangeRegistry({add:copy});
-
-                        //TEST
-                        // ui.menus.CelestialDetails.show(copy);
-                        
-                        return copy;
-                    });
+                let copy:Celestial = await celestial.clone();
+                return await this.addCelestial(copy, addedByLineage);
             }
             return null;
         }
-        public static async addCelestialAtPosition(lookup:string, x:number, y:number, addedByLineage?:boolean) {
-            let celestial:Celestial = await CelestialsManager.addCelestial(lookup, addedByLineage);
+        public static async addCelestialByLookupAtPosition(lookup:string, x:number, y:number, addedByLineage?:boolean) {
+            let celestial:Celestial = await CelestialsManager.addCelestialByLookup(lookup, addedByLineage);
             if(celestial == null) return null;
             celestial.X = x;
             celestial.Y = y + celestial.Height;
             return celestial;
         }
 
-        public static countCelestials(lookup:string) {
+        public static countCelestialsOfType(lookup:string) {
             let count:number = 0;
             for(let cel of CelestialsManager.Celestials)
                 if(cel.Lookup == lookup)
@@ -154,10 +187,21 @@ namespace celestials.managers{
         }
 
         public static update() {
+            const instance = CelestialsManager._instance;
+            // //update spawn tick
+            // instance._spawnTick++;
+            // let callSpawn:boolean = false;
+            // if(instance._spawnTick > instance._spawnRate) {
+            //     callSpawn = true;
+            //     instance._spawnTick = 0;
+            // }
             //update the current celestials
-            for(let cel of CelestialsManager._instance._celestials)
-            if(cel.IsLoaded)
-                cel.update();
+            for(let cel of instance._celestials) {
+                if(cel.IsLoaded) {
+                    cel.update();
+                    // if(callSpawn) cel.trySpawn();
+                }
+            }
         }
 
         public static callChangeCelestial(celestial:Celestial) {
@@ -225,6 +269,7 @@ namespace celestials.managers{
         public static get Template():HTMLElement { return CelestialsManager._instance._template; }
         public static get Templates():Celestial[] { return CelestialsManager._instance._templates; }
         public static get Celestials():Celestial[] { return CelestialsManager._instance._celestials; }
+        public static get SpawnRate():number { return CelestialsManager._instance._spawnRate; }
 
 
     }

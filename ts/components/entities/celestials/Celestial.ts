@@ -7,7 +7,10 @@ namespace celestials.entities {
         presets?:string[];
         scale?:{min:number, max:number};
         variation?:number;
-        maxSpawns?:number;
+        spawnChance?:number; //the odds during a spawn update that this celestial will spawn
+        maxSpawns?:number; //the max number of celestials of this type that may appear
+        maxDescendants?:number; //the max descendants a celestial is allowed to spawn
+        spawnLineage?:ISpawnLineage[];
         zIndex?:number;
         icon?:string;
         images?:{name:string, path:string}[];
@@ -24,24 +27,38 @@ namespace celestials.entities {
         path?:string;
         frames?:{name:string, x:number, y:number, w:number, h:number}[];
     }
+    export interface ISpawnLineage {
+        lookup:string;
+        chance:number;
+        rare?:boolean; //if rare, the celestial will ignore the cap and allow it to be spawned
+    }
 
     export class Celestial extends Entity implements ICloneable<Celestial>, ILoadable, IUpdateable {
 
         private _sequencer:engines.CelestialSequencer;
         private _physics:engines.Physics;
         private _moods:engines.Moods;
+        private _relationships:engines.Relationships;
         private _logic:logic.CelestialLogic;
 
         private _scale:number;
         private _variation:number;
         private _size:number; //created once loaded first logic on height of img vs height of screen
         private _dateSpawned:Date;
-        private _spawnedBy:Celestial;
         private _eventsRegistry:Dictionary<string, any>;
-
+        
         private _paused:boolean;
         private _isControlled:boolean; //true when user is controlling the celestial, such as dragging \\ limited movements
         private _icon:HTMLImageElement;
+        
+        private _spawnTick:number;
+        private _spawnOdds:number; //increments for every failed spawn
+        private _isSpawning:boolean;
+        private _spawnedBy:Celestial;
+        private _descendants:Celestial[];
+
+        private _interactingWith:Celestial;
+        private _interactBurnout:number;
 
         //debug
         private _overlayMenu:ui.menus.CelestialOverlay;
@@ -54,6 +71,14 @@ namespace celestials.entities {
             this._paused = false;
             this._isControlled = false;
             this._size = 0;
+
+            this._spawnTick = 0;
+            this._spawnOdds = 0;
+            this._isSpawning = false;
+            this._descendants = new Array();
+
+            this._interactingWith = null;
+            this._interactBurnout = 0;
 
             
             //get the date
@@ -191,6 +216,169 @@ namespace celestials.entities {
         public releaseControl() {
             this._isControlled = false;
         }
+
+        public trySpawn() {
+            this._spawnTick = 0;
+            if(this.Data.spawnChance == null) return; //no spawning if no chance
+            console.log(this.Data.spawnChance);
+            console.log("LISTEN FOR SPAWNING!!!!!!!!");
+            //increment tick
+            this._spawnOdds++;
+            let chance = randomRange(0, 100);
+            let spawnChance = this.Data.spawnChance;
+            let result = Math.abs(chance - this._spawnOdds);
+
+            console.log("SPAWN CHANCE: ", spawnChance, " ODDS: ", this._spawnOdds, " CHANCE: ", chance, "COMB: ", result);
+            if(result < spawnChance) {
+                console.log("SPAWNING FRIEND");
+                this.spawn();
+            }
+        }
+        public spawn() {
+            //reset odds
+            this._spawnOdds = 0;
+            this._isSpawning = true;
+            //play a spawn sequence, if there is one
+            if(!this._logic.startState(engines.CelestialSequencer.STATE.Spawn))
+                this.endSpawn();
+        }
+        public async endSpawn(spawnChance?:number) {
+            this._isSpawning = false;
+            spawnChance = spawnChance || 50;
+            console.log("MIGHT SPAWN");
+            let chance = randomRange(0, 100);
+            console.log("CHANCE: ", chance, "SPAWN CHANCE: ", spawnChance);
+            if(spawnChance > chance) {
+                console.log("WANT TO SPAWN!");
+                
+                //find the celestial to spawn
+                let lookup = this.Lookup;
+                let rare = false;
+                if(this.Data.spawnLineage != null) {
+                    //iterate through and test
+                    for(let lin of this.Data.spawnLineage) {
+                        let odds = randomRange(0, 100);
+                        //test the value
+                        if(lin.chance >= odds) {
+                            //make sure the template is good
+                            if(managers.CelestialsManager.getTemplateByLookup(lin.lookup) != null) {
+                                lookup = lin.lookup;
+                                rare = lin.rare || false;
+                            }
+                        }
+                    }
+                }
+
+                //make sure we have not maxed out our descendants!
+                console.log("MAX: " + this.Data.maxDescendants + ", CURRENT: " + this._descendants.length);
+                //max descendants ONLY applies if we are not spawning a celestial deemed rarer
+                if(this.Data.maxDescendants != null) {
+                    if(this._descendants.length >= this.Data.maxDescendants && !rare) {
+                        console.log(`${this.Name} has too many children!  Cannot spawn any more!`);
+                        return;
+                    }
+                }
+
+                //spawn the actual clone, and give this as its parent
+                let spawn = await managers.CelestialsManager.addCelestialByLookupAtPosition(lookup, this.X, this.Y);
+                if(spawn != null) {
+                    spawn.setSpawnParent(this);
+                    //fling the celestial a little bit
+                    spawn.Physics.addForceX(randomRange(-100, 100));
+                    spawn.Physics.addForceY(randomRange(-100, 100));
+
+                    //set child as a descendant
+                    this._descendants.push(spawn);
+                }
+            }
+            
+        }
+
+
+        public askToInteractWith(celestial:Celestial) {
+            console.log("I WANT TO TALK TO : " + celestial.Name);
+            //if we are already waiting, ignore this interaction proposal
+            if(celestial.InteractingWith != null) return false;
+            if(celestial.InteractingWith == this) return false;
+            console.log("I AM LISTENING: " + this.Name);
+            this._interactingWith = celestial;
+            //if the celestial is being carried, no interacting
+            if(this.Sequencer.CurrentState == engines.CelestialSequencer.STATE.Hold) return false;
+            if(celestial.Sequencer.CurrentState == engines.CelestialSequencer.STATE.Hold) return false;
+            //if we are burned out, no talking for the moment -- give a window for talking, but small
+            if(this._interactBurnout > 0 && randomRange(0, 1) < 0.9) return false;
+
+            //see if we are willing to interact
+            //see if our social needs want us to talk
+            if(this._moods.UsesMood) {
+                let chance = randomRange(0, 100);
+                if(chance < this._moods.getMoodByName(engines.Moods.MOOD.Social).value) return false;
+                else if(randomRange(0, 1) > 0.2) return false; //otherwise, try to talk anyway
+            }
+            //see if we have a good relationship with this celestial
+            if(this._relationships != null) {
+                let relationship = this._relationships.findRelationshipByCelestial(celestial);
+                if(relationship != null) {
+                    let chance = randomRange(0, 100);
+                    if(chance > relationship.value)
+                        //if we have a bad relationship, chance talking to
+                        if(randomRange(0, 1) > 0.5) return false;
+                }
+            }
+            //figure out the type of interation this will be
+            let valueOfInteraction = this._relationships.getInteractValueWith(celestial);
+            celestial.Relationships.setInteraction(this, valueOfInteraction);
+            this.Relationships.setInteraction(celestial, valueOfInteraction);
+            //boost mood social
+            this._moods.boost(engines.Moods.MOOD.Social, (valueOfInteraction * Math.max(1, this._relationships.Attachment)), true);
+            celestial.Moods.boost(engines.Moods.MOOD.Social, (valueOfInteraction * Math.max(1, this._relationships.Attachment)), true);
+            //otherwise, accept interaction
+            this.startInteraction(celestial);
+            celestial.startInteraction(this);
+
+            //face one another
+            if(this.X < celestial.X) {
+                this.setDirectionX(1);
+                celestial.setDirectionX(-1);
+            }
+            else {
+                this.setDirectionX(-1);
+                celestial.setDirectionX(1);
+            }
+
+            //try to start an interation dialog based on interation strength
+            return true;
+        }
+        public async startInteraction(celestial:Celestial) {
+            this._interactingWith = celestial;
+            console.log("I AM STARTING AN INTERACTION WITH: " + celestial.Name);
+            //set burnout
+            this._interactBurnout = ((100-this.Relationships.Attachment) * randomRange(0.7, 1.3));
+            console.log("BURNOUT: " + this._interactBurnout);
+            //start interact state if there is one, otherwise, default to idle
+            //TODO display interaction based on good or bad
+            if(await this._logic.startState(engines.CelestialSequencer.STATE.Interact)) {
+                //set the interaction type for the last relationship action
+                if(this._relationships != null) {
+                    let relationship = this._relationships.findRelationshipByCelestial(celestial);
+                    if(relationship != null) relationship.lastAction = `${celestial.Sequencer.CurrentSequence.name} with ${celestial.Name}`;
+                }
+                if(celestial.Relationships != null) {
+                    let relationship = celestial.Relationships.findRelationshipByCelestial(this);
+                    if(relationship != null) relationship.lastAction = `${this.Sequencer.CurrentSequence.name} with ${this.Name}`;
+                }
+            }
+            else this._logic.startState(engines.CelestialSequencer.STATE.Idle);
+        }
+        public completeInteraction() {
+            if(this._interactingWith.InteractingWith != null) {
+                this._interactingWith.InteractingWith.Logic.nextState();
+            }
+            this._interactingWith = null;
+        }
+        public removeInteractionCelestial() {
+            this._interactingWith = null;
+        }
         
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
@@ -213,6 +401,8 @@ namespace celestials.entities {
                     this._physics = new engines.Physics(this);
                     //create moods
                     this._moods = new engines.Moods(this);
+                    //create relationships
+                    this._relationships = new engines.Relationships(this);
                     //create logic
                     this._logic = new logic.CelestialLogic(this, this.Data.logic || null);
                     //set the scale
@@ -371,7 +561,7 @@ namespace celestials.entities {
                     this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
                     //TODO I've setup the click event, don't readd unless removing this one
                     // managers.MouseManager.listenForMouseDown(this._node, (e) => this._onClicked(e));
-                    managers.MouseManager.listenForDrag(this._node,
+                    managers.MouseManager.listenForDrag(this.MainImage,
                         (x,y) => {
                             managers.CelestialsManager.onGrab(this, x, y);
                             //start hold sequence, if there is one
@@ -384,7 +574,7 @@ namespace celestials.entities {
                         }
                     );
                     //on right click, show context menu
-                    managers.MouseManager.listenForRightClick(this._node, () => ui.menus.CelestialContext.show(this));
+                    managers.MouseManager.listenForRightClick(this.MainImage, () => ui.menus.CelestialContext.show(this));
                     
                 }  
                 catch(e) {
@@ -414,6 +604,12 @@ namespace celestials.entities {
         public async update() {
             if(this._paused) return;
 
+            // handle spawn update
+            this._spawnTick++;
+            if(this._spawnTick > managers.CelestialsManager.SpawnRate) {
+                this.trySpawn();
+            }
+
             //update sequence
             // logic > sequencer > draw > physics
             await this._logic.update();
@@ -432,6 +628,10 @@ namespace celestials.entities {
             // }
 
 
+            this._interactBurnout--;
+            if(this._interactBurnout < 0) this._interactBurnout = 0;
+
+
             this._overlayMenu.update();
             this._overlayMenu.changeName(this.Name);
             this._overlayMenu.changeSequence(this._sequencer.CurrentSequence.name);
@@ -439,6 +639,11 @@ namespace celestials.entities {
         /*---------------------------------------------- EVENTS --------------------------------------*/
         private _onSequenceComplete() {
             console.log("SEQUENCE COMPLETE");
+            //listen for spawning
+            if(this._isSpawning) this.endSpawn(this._sequencer.CurrentSequence.spawnChance);
+            if(this._interactingWith != null) {
+                this.completeInteraction();
+            }
             //TODO set a sequence hierarchy either here or in logic.  Probably in logic.
             // this._sequencer.changeSequence(this._sequencer.Sequences.idles[0]);
             this._logic.next();
@@ -480,6 +685,7 @@ namespace celestials.entities {
         public get Sequencer():engines.CelestialSequencer { return this._sequencer; }
         public get Physics():engines.Physics { return this._physics; }
         public get Moods():engines.Moods { return this._moods; }
+        public get Relationships():engines.Relationships { return this._relationships; }
         public get Logic():logic.CelestialLogic { return this._logic; }
         public get Icon():HTMLImageElement { return this._icon; }
 
@@ -535,6 +741,9 @@ namespace celestials.entities {
         }
 
         public get SpawnedBy():Celestial { return this._spawnedBy; }
+        public get Descendants():Celestial[] { return this._descendants; }
+
+        public get InteractingWith():Celestial { return this._interactingWith; }
 
         // public get Icon():string {
         //     if(this._imagesLookup.containsKey("icon"))

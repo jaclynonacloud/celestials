@@ -4,13 +4,15 @@ namespace celestials.engines {
 
     export interface ICelestialSequences {
         updateRate?:number;
-        idles?:ICelestialSequenceSet;
+        idles:ICelestialSequenceSet;
         walks?:ICelestialSequenceSet;
         climbs?:ICelestialSequenceSet;
         hangs?:ICelestialSequenceSet;
         falls?:ICelestialSequenceSet;
         recovers?:ICelestialSequenceSet;
         holds?:ICelestialSequenceSet;
+        spawns?:ICelestialSequenceSet;
+        interactions?:ICelestialSequenceSet;
     }
     export interface ICelestialSequenceSet {
         attentionSpan?:number;
@@ -25,6 +27,7 @@ namespace celestials.engines {
         name?:string;
         duration?:number;
         looping?:boolean;
+        spawnChance?:number; //used by the spawns sequences
         frames?:ICelestialFrame[];
     }
     export interface ICelestialFrame {
@@ -44,7 +47,9 @@ namespace celestials.engines {
             "Hang" : "hangs",
             "Fall" : "falls",
             "Recover" : "recovers",
-            "Hold" : "holds"
+            "Hold" : "holds",
+            "Spawn" : "spawns",
+            "Interact" : "interactions"
         });}
         public static get DEFAULT_TRANSITIONAL_STATES():string[] { return ["Idle", "Walk"]; }
 

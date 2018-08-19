@@ -84,20 +84,52 @@ namespace celestials.systems {
         }
 
         private _sendLeft() {
-            for(let cel of CelestialsManager.Celestials)
+            for(let cel of CelestialsManager.Celestials) {
                 cel.Physics.addForceX(-100);
+                cel.takeControl();
+            }
+            setTimeout(() => {
+                for(let cel of CelestialsManager.Celestials) {
+                    cel.releaseControl();
+                    cel.Logic.updateState();
+                }
+            }, 100);
         }
         private _sendRight() {
-            for(let cel of CelestialsManager.Celestials)
+            for(let cel of CelestialsManager.Celestials) {
                 cel.Physics.addForceX(100);
+                cel.takeControl();
+            }
+            setTimeout(() => {
+                for(let cel of CelestialsManager.Celestials) {
+                    cel.releaseControl();
+                    cel.Logic.updateState();
+                }
+            }, 100);
         }
         private _sendUp() {
-            for(let cel of CelestialsManager.Celestials)
+            for(let cel of CelestialsManager.Celestials) {
                 cel.Physics.addForceY(-200);
+                cel.takeControl();
+            }
+            setTimeout(() => {
+                for(let cel of CelestialsManager.Celestials) {
+                    cel.releaseControl();
+                    cel.Logic.updateState();
+                }
+            }, 100);
         }
         private _sendDown() {
-            for(let cel of CelestialsManager.Celestials)
+            for(let cel of CelestialsManager.Celestials) {
                 cel.Physics.addForceY(200);
+                cel.takeControl();
+            }
+            setTimeout(() => {
+                for(let cel of CelestialsManager.Celestials) {
+                    cel.releaseControl();
+                    cel.Logic.updateState();
+                }
+            }, 100);
         }
 
         private _snapToTop() {
@@ -106,7 +138,7 @@ namespace celestials.systems {
         }
 
         private _spawnCelestial() {
-            CelestialsManager.addCelestial("solaris");
+            CelestialsManager.addCelestialByLookup("solaris");
         }
 
         private _flipCelestialX() {

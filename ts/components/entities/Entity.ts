@@ -111,6 +111,14 @@ namespace celestials.entities {
         }
 
 
+        public showRegistrationPoint(show:boolean) {
+            let regPointDiv = this._node.querySelector(".coord");
+            if(regPointDiv == null) return;
+            if(show) regPointDiv.classList.remove("hide");
+            else regPointDiv.classList.add("hide");
+        }
+
+
         public registerListener(node:HTMLElement, func:Function) {
             //look for entry
             if(this._callbacksRegistry.containsKey(node)) {

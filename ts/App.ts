@@ -9,6 +9,7 @@
 
 ///<reference path="./systems/Controls.ts" />
 ///<reference path="./systems/Debugger.ts" />
+///<reference path="./systems/Collision.ts" />
 ///<reference path="./systems/Notifications.ts" />
 ///<reference path="./managers/CelestialsManager.ts" />
 ///<reference path="./managers/InputManager.ts" />
@@ -49,9 +50,15 @@ namespace celestials {
             console.log("SETUP");
             App._bounds = new Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight);
 
+            //setup systems
+            await new systems.Collision();
+
             //initialize managers
             await new managers.MouseManager();
             await new managers.InputManager();
+
+            //setup tooltips early so it can listen to managers for desired tooltips as well
+            await new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
 
             // await new managers.RemoteManager();
             // let celestialsMan = await new managers.CelestialsManager();
@@ -70,7 +77,6 @@ namespace celestials {
             await new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
             await new ui.menus.CurrentCelestialsPanel(document.querySelector(".overlay-menu.current-celestials"));
             await new ui.menus.CelestialDetails(document.querySelector(".overlay-menu.celestial-details"));
-            await new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
             await new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
 
             //test
@@ -97,6 +103,8 @@ namespace celestials {
                 //update managers
                 managers.InputManager.update();
                 managers.CelestialsManager.update();
+                //update systems
+                systems.Collision.update();
             }, 1000/30);
         }
 
