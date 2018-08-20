@@ -1,3 +1,5 @@
+// let background = require("./../js/background.js");
+
 /**
  * @author Jaclyn Staples
  * http://jaclynonacloud.com
@@ -153,8 +155,6 @@ namespace celestials {
         await App.setup();
         _window.celestials = celestials.managers.CelestialsManager;
     }
-    setupApp();
-
-    
+    setupApp();   
     
 }
