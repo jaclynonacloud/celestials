@@ -220,8 +220,8 @@ namespace celestials.engines {
 
             return new Promise((resolve, reject) => {
                 try {
-                    this._holdIndex++;
-                    this._totalIndex++;
+                    this._holdIndex += 1 * App.FPS_Latency;
+                    this._totalIndex += 1 * App.FPS_Latency;
 
                     //do testing
                     //test frame hold

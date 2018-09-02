@@ -9,10 +9,12 @@
  * Uses json files to load and structure buddies.  Easily readable, easily designable.
  */
 
+///<reference path="./systems/Collision.ts" />
+///<reference path="./systems/Console.ts" />
 ///<reference path="./systems/Controls.ts" />
 ///<reference path="./systems/Debugger.ts" />
-///<reference path="./systems/Collision.ts" />
 ///<reference path="./systems/Notifications.ts" />
+///<reference path="./systems/Weather.ts" />
 ///<reference path="./managers/CelestialsManager.ts" />
 ///<reference path="./managers/InputManager.ts" />
 ///<reference path="./managers/MouseManager.ts" />
@@ -37,6 +39,8 @@ namespace celestials {
         private static _usingRemote:boolean;
 
         private static _usesMood:boolean;
+        private static _timestamp:number;
+        private static _latency:number;
 
         constructor(win:Window, node:HTMLElement) {
             App._instance = this;
@@ -45,6 +49,8 @@ namespace celestials {
             App._paused = false;
 
             App._usesMood = false;
+            App._timestamp = 0;
+            App._latency = 0;
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -52,12 +58,14 @@ namespace celestials {
             console.log("SETUP");
             App._bounds = new Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight);
 
-            //setup systems
-            await new systems.Collision();
-
             //initialize managers
             await new managers.MouseManager();
             await new managers.InputManager();
+
+            //setup systems
+            await new systems.Console(document.querySelector(".overlay-menu.console"));
+            await new systems.Collision();
+            await new systems.Weather(document.querySelector(".weather"));            
 
             //setup tooltips early so it can listen to managers for desired tooltips as well
             await new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
@@ -100,14 +108,18 @@ namespace celestials {
             // return;
 
             //create update loop
-            setInterval(() => {
-                if(App._paused) return;
-                //update managers
-                managers.InputManager.update();
-                managers.CelestialsManager.update();
-                //update systems
-                systems.Collision.update();
-            }, 1000/30);
+
+            
+            App.resume();
+
+            // setInterval(() => {
+            //     if(App._paused) return;
+            //     //update managers
+            //     managers.InputManager.update();
+            //     managers.CelestialsManager.update();
+            //     //update systems
+            //     systems.Collision.update();
+            // }, 1000/30);
         }
 
 
@@ -116,6 +128,26 @@ namespace celestials {
         }
         public static resume() {
             App._paused = false;
+            this._window.requestAnimationFrame(App.step);
+        }
+
+        public static step(timestamp:number) {
+            if(App._paused) return;
+
+            App._latency = timestamp - App._timestamp;
+            App._timestamp = timestamp;
+
+            // console.log("TIMESTAMP: " + App._timestamp);
+            // console.log("LATENCY: " + App._latency / 1000);
+
+            //update managers
+            managers.InputManager.update();
+            managers.CelestialsManager.update();
+            //update systems
+            systems.Collision.update();
+
+            //request next frame
+            App._window.requestAnimationFrame(App.step);
         }
 
 
@@ -140,6 +172,9 @@ namespace celestials {
          */
         public static get MousePosition():IPoint { return managers.MouseManager.MousePosition; }
         public static get Paused():boolean { return App._paused; }
+        public static get Runtime():number  { return App._timestamp; }
+        public static get Latency():number  { return App._latency; }
+        public static get FPS_Latency():number { return Math.abs((App.Latency / 30)); }
 
 
         public static get UsesMood():boolean { return App._usesMood; }

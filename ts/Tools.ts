@@ -21,6 +21,14 @@ namespace celestials {
     }
 
 
+    /**Creates an async wait function for the given amount of time in miliseconds. */
+    export async function wait(time:number) {
+        return new Promise(async(res, rej) => {
+            await setTimeout(() => res(), time);
+        });            
+    }
+
+
     /**
      * Clamps the number between the min/max.
      */
@@ -118,6 +126,10 @@ namespace celestials {
             for(let i = 0; i < this._pairs.length; i++)
                 if(this._pairs[i][1] == value) return true;
             return false;
+        }
+
+        splice(start:number, deleteCount?:number) {
+            this._pairs.splice(start, deleteCount);
         }
 
         get List():Array<V> {

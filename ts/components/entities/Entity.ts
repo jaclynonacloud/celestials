@@ -5,6 +5,7 @@ namespace celestials.entities {
         path?:string;
         //setup
         position?:IPoint;
+        randomPosition?:boolean;
         registrationPoint?:IPoint;
         direction?:IPoint;
         //engines
@@ -66,6 +67,10 @@ namespace celestials.entities {
             //setup with data, if applicable
             if(this._data != null) {
                 if(this._data.position != null) this._position = this._data.position;
+                if(this._data.randomPosition != null) this._position = {
+                    x: randomRange(0, App.Bounds.Width),
+                    y: randomRange(0, App.Bounds.Height)
+                };
                 if(this._data.registrationPoint != null) this._registrationPoint = this._data.registrationPoint;
                 if(this._data.direction != null) this._direction = this._data.direction;
             }

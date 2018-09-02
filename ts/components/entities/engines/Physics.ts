@@ -161,9 +161,10 @@ namespace celestials.engines {
             }
 
             await this.correctVelocity();
+            // console.log("Y: " + this._velocity.y * this.Latency);
             //set the new position
-            this._entity.X += this._velocity.x;
-            this._entity.Y += this._velocity.y;
+            this._entity.X += this._velocity.x * App.FPS_Latency;
+            this._entity.Y += this._velocity.y * App.FPS_Latency;
 
             
             await this.keepInBounds();

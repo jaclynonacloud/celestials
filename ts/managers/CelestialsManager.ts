@@ -70,6 +70,16 @@ namespace celestials.managers{
                 
             }
 
+
+
+            //create console commands
+            systems.Console.addToConsoleCommands("celestials.removeAll()", ()=>CelestialsManager.removeAllCelestials());
+            //add celestials
+            for(let temp of CelestialsManager.Templates) {
+                systems.Console.addToConsoleCommands(`celestials.add(${temp.Lookup})`, ()=>CelestialsManager.addCelestialByLookup(temp.Lookup));
+            }
+
+
              //DEBUG let app/user decide what celestials are added
             //  for(let temp of this._templates) {
             //     CelestialsManager.addCelestial(temp.Lookup);
@@ -79,8 +89,10 @@ namespace celestials.managers{
             //TODO: load a random unlocked celestial
             // if(CelestialsManager._lookup.containsKey("solaris"))
             //     await CelestialsManager.addCelestialByLookup("solaris");
+            // for(let n = 0; n < 200; n++) {
             if(CelestialsManager._lookup.containsKey("solaris"))
                 await CelestialsManager.addCelestialByLookup("solaris");
+            // }
 
 
             //listen to bounds leave -- call up event if we leave

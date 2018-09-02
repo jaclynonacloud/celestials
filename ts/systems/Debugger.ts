@@ -12,6 +12,14 @@ namespace celestials.systems {
         constructor() {
             Debugger._instance = this;
 
+            let controlPanelKey = [Key.Code.c];
+            InputManager.addBinding("debug__openControlPanel", new KeyBinding(this._openControlPanel.bind(this), KeyBinding.State.Down, ...controlPanelKey));
+
+            let pauseKey = [Key.Code.p];
+            InputManager.addBinding("debug__pauseApp", new KeyBinding(this._togglePause.bind(this), KeyBinding.State.Down, ...pauseKey));
+
+            return;
+
             //debug
             let randoVelocityKey = [Key.Code.a];
             InputManager.addBinding("debug__velocity", new KeyBinding(this._randomVelocity.bind(this), KeyBinding.State.Down, ...randoVelocityKey));
@@ -43,11 +51,6 @@ namespace celestials.systems {
             InputManager.addBinding("debug__switchStateCelestial", new KeyBinding(this._switchState.bind(this), KeyBinding.State.Down, ...switchStateKey));
 
 
-            let pauseKey = [Key.Code.p];
-            InputManager.addBinding("debug__pauseApp", new KeyBinding(this._togglePause.bind(this), KeyBinding.State.Down, ...pauseKey));
-
-            let controlPanelKey = [Key.Code.c];
-            InputManager.addBinding("debug__openControlPanel", new KeyBinding(this._openControlPanel.bind(this), KeyBinding.State.Down, ...controlPanelKey));
 
             let celestialsPanelKey = [Key.Code.m];
             InputManager.addBinding("debug__openCelestialsPanel", new KeyBinding(this._openCelestialsPanel.bind(this), KeyBinding.State.Down, ...celestialsPanelKey));
@@ -63,6 +66,9 @@ namespace celestials.systems {
 
             let deleteLastCelestialKey = [Key.Code["numpad 0"]];
             InputManager.addBinding("debug__deleteLastCelestial", new KeyBinding(this._deleteLastCelestial.bind(this), KeyBinding.State.Down, ...deleteLastCelestialKey));
+
+            let stopWeatherKey = [Key.Code["numpad 1"]];
+            InputManager.addBinding("debug__stopWeather", new KeyBinding(this._stopWeather.bind(this), KeyBinding.State.Down, ...stopWeatherKey));
         }
 
 
@@ -176,7 +182,14 @@ namespace celestials.systems {
         }
 
         private _deleteLastCelestial() {
-            managers.CelestialsManager.removeCelestial(managers.CelestialsManager.Celestials[managers.CelestialsManager.Celestials.length-1]);        }
+            managers.CelestialsManager.removeCelestial(managers.CelestialsManager.Celestials[managers.CelestialsManager.Celestials.length-1]);
+        }
+
+        private _stopWeather() {
+            systems.Weather.Instance.stopWeather();
+        }
+
+
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         /*---------------------------------------------- EVENTS --------------------------------------*/
