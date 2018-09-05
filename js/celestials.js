@@ -5008,8 +5008,30 @@ var celestials;
                                 })];
                         case 1:
                             _a.sent();
-                            console.log("Moving on");
-                            return [2];
+                            splash = new celestials.systems.Splash(document.querySelector('.splash-screen'), document.querySelector(".splash-screen .progress"));
+                            splash.open();
+                            splash.setTasks([
+                                function () { return App._bounds = new celestials.Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight); },
+                                function () { return new celestials.managers.MouseManager(); },
+                                function () { return new celestials.managers.InputManager(); },
+                                function () { return new celestials.systems.Console(document.querySelector(".overlay-menu.console")); },
+                                function () { return new celestials.systems.Collision(); },
+                                function () { return new celestials.systems.Weather(document.querySelector(".weather")); },
+                                function () { return new celestials.ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip")); },
+                                function () { return new celestials.managers.CelestialsManager(); },
+                                function () { return celestials.managers.CelestialsManager.Instance.setup(); },
+                                function () { return new celestials.ui.menus.CelestialContext(document.querySelector(".context-menu.celestial")); },
+                                function () { return new celestials.ui.menus.ApplicationContext(document.querySelector(".context-menu.application")); },
+                                function () { return new celestials.ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds")); },
+                                function () { return new celestials.ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel")); },
+                                function () { return new celestials.ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials")); },
+                                function () { return new celestials.ui.menus.CurrentCelestialsPanel(document.querySelector(".overlay-menu.current-celestials")); },
+                                function () { return new celestials.ui.menus.CelestialDetails(document.querySelector(".overlay-menu.celestial-details")); },
+                                function () { return new celestials.ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel")); },
+                                function () { return new celestials.systems.Controls(); },
+                                function () { return new celestials.systems.Debugger(); }
+                            ]);
+                            return [4, splash.autoStartTasks()];
                         case 2:
                             _a.sent();
                             console.log("Done LOADING");

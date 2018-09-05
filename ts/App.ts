@@ -65,9 +65,6 @@ namespace celestials {
                 App._maxCelestials = data.maxCelestials || 10;
                 console.log("MAX: " + App._maxCelestials);
             });
-            console.log("Moving on");
-
-            return;
 
             //start splash immediately
             let splash = new systems.Splash(document.querySelector('.splash-screen'), document.querySelector(".splash-screen .progress"));
