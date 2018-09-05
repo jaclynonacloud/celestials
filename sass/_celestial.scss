@@ -1,0 +1,42 @@
+.celestials {
+        
+    > .celestial {
+        position: absolute;
+        display: flex;
+        cursor: pointer;
+        pointer-events: all;
+        z-index: 2;
+
+        .graphics {
+            position: relative;
+            isolation: isolate;
+
+            .main-image {
+                position: absolute;
+                bottom: 0;
+                filter: hue-rotate(-20deg);
+            }
+        }
+
+        .coord {
+            position: absolute;
+            bottom: 0;
+            background: blue;
+            width: 2px;
+            height: 2px;
+        }
+
+    }
+
+}
+
+.collision {
+    position: absolute;
+    background: blue;
+    opacity: 0.5;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+}
