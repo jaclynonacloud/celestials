@@ -3,12 +3,13 @@
 /**
  * @author Jaclyn Staples
  * http://jaclynonacloud.com
- * @version 2018.08.11
+ * @version 2018.09.03
  * 
  * Celestials - A desktop buddies applications designed to be flexible and highly customizable!
  * Uses json files to load and structure buddies.  Easily readable, easily designable.
  */
 
+///<reference path="./systems/Splash.ts" />
 ///<reference path="./systems/Collision.ts" />
 ///<reference path="./systems/Console.ts" />
 ///<reference path="./systems/Controls.ts" />
@@ -33,6 +34,7 @@ namespace celestials {
         private static _instance:App;
         private static _window:Window;
         private static _node:HTMLElement;
+        private static _maxCelestials:number;
 
         private static _bounds:Rect;
         private static _paused:boolean;
@@ -56,53 +58,77 @@ namespace celestials {
         /*---------------------------------------------- METHODS -------------------------------------*/
         public static async setup() {
             console.log("SETUP");
-            App._bounds = new Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight);
 
-            //initialize managers
-            await new managers.MouseManager();
-            await new managers.InputManager();
+            //read the .ini
+            await fetchIni("../res/celestials.ini", (data) => {
+                console.warn(data);
+                App._maxCelestials = data.maxCelestials || 10;
+                console.log("MAX: " + App._maxCelestials);
+            });
+            console.log("Moving on");
 
-            //setup systems
-            await new systems.Console(document.querySelector(".overlay-menu.console"));
-            await new systems.Collision();
-            await new systems.Weather(document.querySelector(".weather"));            
+            return;
 
-            //setup tooltips early so it can listen to managers for desired tooltips as well
-            await new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip"));
+            //start splash immediately
+            let splash = new systems.Splash(document.querySelector('.splash-screen'), document.querySelector(".splash-screen .progress"));
+            splash.open();
+            //load tasks
+            splash.setTasks([
+                () => App._bounds = new Rect(App._node.offsetLeft, App._node.offsetTop, App._node.offsetWidth, App._node.offsetHeight),
+                //initialize managers
+                () => new managers.MouseManager(),
+                () => new managers.InputManager(),
 
-            // await new managers.RemoteManager();
-            // let celestialsMan = await new managers.CelestialsManager();
-            // await celestialsMan.setup(managers.RemoteManager.Files)
+                // //setup systems
+                () => new systems.Console(document.querySelector(".overlay-menu.console")),
+                () => new systems.Collision(),
+                () => new systems.Weather(document.querySelector(".weather")),
 
-            let celestialsMan = await new managers.CelestialsManager();
-            await celestialsMan.setup();
+                // //setup tooltips early so it can listen to managers for desired tooltips as well
+                () => new ui.menus.Tooltip(document.querySelector(".overlay-menu.tooltip")),
+
+                /** REMOTE ELECTRON BUILD */
+                // () => new managers.RemoteManager(),
+                // () => new managers.CelestialsManager(),
+                // () => managers.CelestialsManager.Instance.setup(managers.RemoteManager.Files),
+
+                () => new managers.CelestialsManager(),
+                () => managers.CelestialsManager.Instance.setup(),
 
 
-            //set the contexts
-            await  new ui.menus.CelestialContext(document.querySelector(".context-menu.celestial"));
-            await new ui.menus.ApplicationContext(document.querySelector(".context-menu.application"));
-            //set the statics
-            await new ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds"));
-            await new ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel"));
-            await new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials"));
-            await new ui.menus.CurrentCelestialsPanel(document.querySelector(".overlay-menu.current-celestials"));
-            await new ui.menus.CelestialDetails(document.querySelector(".overlay-menu.celestial-details"));
-            await new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel"));
+                // //set the contexts
+                () => new ui.menus.CelestialContext(document.querySelector(".context-menu.celestial")),
+                () => new ui.menus.ApplicationContext(document.querySelector(".context-menu.application")),
+                // //set the statics
+                () => new ui.menus.NotificationBar(document.querySelector(".overlay-menu.notifications-bar"), document.querySelector(".notifications-bar-bounds")),
+                () => new ui.menus.NotificationPanel(document.querySelector(".overlay-menu.notifications-panel")),
+                () => new ui.menus.CelestialsPanel(document.querySelector(".overlay-menu.celestials")),
+                () => new ui.menus.CurrentCelestialsPanel(document.querySelector(".overlay-menu.current-celestials")),
+                () => new ui.menus.CelestialDetails(document.querySelector(".overlay-menu.celestial-details")),
+                () => new ui.menus.ControlPanel(document.querySelector(".overlay-menu.control-panel")),
+
+                () => new systems.Controls(),
+                () => new systems.Debugger()
+            ]);
+
+            //start tasks
+            // await splash.startTasks();
+            await splash.autoStartTasks();
+
+            console.log("Done LOADING");
+            splash.close();
+
+            
 
             //test
             systems.Notifications.addNotification("This is a test!", systems.Notifications.TYPE.Notify);
             systems.Notifications.addNotification("This is a test for failure!", systems.Notifications.TYPE.Fail);
-            
 
-            
-            
-            
-            //test
-            // ui.menus.CelestialsPanel.show();
+            return;
 
-            //initialize systems
-            let controls = await new systems.Controls();
-            let debug = await new systems.Debugger();
+            //load in initial celestial
+            if(managers.CelestialsManager.getTemplateByLookup("solaris") != null)
+                    await managers.CelestialsManager.addCelestialByLookup("solaris");
             
             
             // return;
@@ -123,22 +149,33 @@ namespace celestials {
         }
 
 
-        public static pause() {
-            App._paused = true;
-        }
         public static resume() {
             App._paused = false;
             this._window.requestAnimationFrame(App.step);
+
+            //resume systems
+            systems.Weather.Instance.resume();
+        }
+        public static pause() {
+            App._paused = true;
+
+            //pause systems
+            systems.Weather.Instance.pause();
         }
 
         public static step(timestamp:number) {
-            if(App._paused) return;
+            if(App._paused) {
+                App._timestamp = -1;
+                return;
+            }
 
-            App._latency = timestamp - App._timestamp;
+
+            //if we were recently paused, don't reset the latency until the app timestamp is reset
+            if(App._timestamp != -1) {
+                App._latency = timestamp - App._timestamp;
+            }
+
             App._timestamp = timestamp;
-
-            // console.log("TIMESTAMP: " + App._timestamp);
-            // console.log("LATENCY: " + App._latency / 1000);
 
             //update managers
             managers.InputManager.update();
@@ -149,16 +186,7 @@ namespace celestials {
             //request next frame
             App._window.requestAnimationFrame(App.step);
         }
-
-
-        // public static read(dir) {
-        //     return fs.readdirSync(dir)
-        //         .reduce((files, file) =>
-        //         fs.statSync(path.join(dir, file)).isDirectory() ?
-        //             files.concat(this.read(path.join(dir, file))) :
-        //             files.concat(path.join(dir, file)),
-        //         []);
-        // }
+        
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         /*---------------------------------------------- EVENTS --------------------------------------*/
@@ -174,7 +202,7 @@ namespace celestials {
         public static get Paused():boolean { return App._paused; }
         public static get Runtime():number  { return App._timestamp; }
         public static get Latency():number  { return App._latency; }
-        public static get FPS_Latency():number { return Math.abs((App.Latency / 30)); }
+        public static get FPS_Latency():number { return Math.abs((App.Latency / 1000)); }
 
 
         public static get UsesMood():boolean { return App._usesMood; }

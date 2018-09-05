@@ -4,12 +4,11 @@ namespace celestials.entities {
         name?:string;
         path?:string;
         //setup
-        position?:IPoint;
-        randomPosition?:boolean;
         registrationPoint?:IPoint;
         direction?:IPoint;
         //engines
         physics?:engines.IPhysics;
+        transform?:engines.ITransform;
     }
 
     export class Entity implements ILoadable {
@@ -18,10 +17,13 @@ namespace celestials.entities {
         protected _container:HTMLElement;
         protected _mainImage:HTMLImageElement;
 
+        //engines used by all entities
+        protected _physics:engines.Physics;
+        protected _transform:engines.Transform;
+
         protected _data:IEntity;
         protected _imagesLookup:Dictionary<string, string>; //name, src
 
-        protected _position:IPoint;
         protected _registrationPoint:IPoint;
         protected _direction:IPoint;
 
@@ -39,11 +41,6 @@ namespace celestials.entities {
             this._node = node.cloneNode(true) as HTMLElement;
             this._node.style.position = "absolute";
             this._node.classList.remove("template");
-
-            this._position = {
-                x: 0,
-                y: 0
-            }
 
             this._registrationPoint = {
                 x: 0.5,
@@ -66,11 +63,6 @@ namespace celestials.entities {
 
             //setup with data, if applicable
             if(this._data != null) {
-                if(this._data.position != null) this._position = this._data.position;
-                if(this._data.randomPosition != null) this._position = {
-                    x: randomRange(0, App.Bounds.Width),
-                    y: randomRange(0, App.Bounds.Height)
-                };
                 if(this._data.registrationPoint != null) this._registrationPoint = this._data.registrationPoint;
                 if(this._data.direction != null) this._direction = this._data.direction;
             }
@@ -140,10 +132,6 @@ namespace celestials.entities {
         public async load() {
             return new Promise((resolve, reject) => {
                 try {
-                     //set position
-                    console.log(this._position);
-                    this.X = this._position.x;
-                    this.Y = this._position.y;
                     resolve();
                 }
                 catch(e) {
@@ -159,16 +147,8 @@ namespace celestials.entities {
         public get Node():HTMLElement { return this._node; }
         public get Name():string { return this._name; }
         public get Data():IEntity { return this._data; }
-        public get X():number { return this._position.x; }
-        public set X(value:number) { 
-            this._position.x = value;
-            this._node.style.left = `${this._position.x}px`;
-        }
-        public get Y():number { return this._position.y; }
-        public set Y(value:number) { 
-            this._position.y = value;
-            this._node.style.top = `${this._position.y}px`;
-        }
+        public get X():number { return (this._transform != null) ? this._transform.Position.x : 0; }
+        public get Y():number { return (this._transform != null) ? this._transform.Position.y : 0; }
         public get Direction():IPoint { return this._direction; }
 
         public get RegistrationPoint():IPoint { return this._registrationPoint; }
@@ -181,6 +161,8 @@ namespace celestials.entities {
                 y: this.Height - (this.Height * this._registrationPoint.y)
             };
         }
+
+        public get ImagesLookup():Dictionary<string, string> { return this._imagesLookup; }
 
         public get Width():number {
             return this._width
@@ -196,8 +178,7 @@ namespace celestials.entities {
         }
 
         public get Bounds():Rect { 
-            // return new Rect(this._position.x, this._position.y, this._mainImage.getBoundingClientRect().width, this._mainImage.getBoundingClientRect().height); 
-            return new Rect(this._position.x - this.RegistrationOffset.x, this._position.y - (this.Height - this.RegistrationOffset.y), this.Width, this.Height); 
+            return (this._transform != null) ? new Rect(this._transform.Position.x - this.RegistrationOffset.x, this._transform.Position.y - (this.Height - this.RegistrationOffset.y), this.Width, this.Height) : Rect.Empty; 
         }
     }
 }

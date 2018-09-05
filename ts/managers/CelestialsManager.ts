@@ -53,50 +53,76 @@ namespace celestials.managers{
 
         /*---------------------------------------------- METHODS -------------------------------------*/
         public async setup(files?:string[]) {
-            //load files
-            //for now, just give the folders
-            if(files == null)
-             files = [
-                "./res/celestials/anthony/anthony.json",
-                "./res/celestials/solaris/solaris.json",
-                "./res/celestials/victor/victor.json"];
+            return await new Promise(async(resolve, reject) => {
 
-            for(const file of files) {
-                await fetchJson(file, (json) => {
-                    //DEBUG create celectial
-                    let cel:entities.Celestial = new Celestial(this._template, this._container, json);
-                    CelestialsManager.addTemplate(cel);
-                });
+                //load files
+                //for now, just give the folders
+                if(files == null)
+                files = [
+                    "./res/celestials/anthony/anthony.json",
+                    "./res/celestials/solaris/solaris.jsonc",
+                    "./res/celestials/victor/victor.json"
+                ];
+
+                let preloadPromises = new Array();
+                for(const file of files) {
+                    preloadPromises.push(
+                        new Promise(async(res, rej) => {
+                            await fetchJsonC(file, async(json) => {
+                                let cel:entities.Celestial = new Celestial(this._template, this._container, json);
+                                //preload images
+                                await cel.preloadImages();
+                                CelestialsManager.addTemplate(cel);
+                                res();
+                            });
+                        })                       
+                    );
+                }
+
+                await Promise.all(preloadPromises);
+
+                console.log("Loaded all celestials");
+
+
+
+                //create console commands
+                systems.Console.addToConsoleCommands("celestials.removeAll()", ()=>CelestialsManager.removeAllCelestials());
+                //add celestials
+                for(let temp of CelestialsManager.Templates) {
+                    systems.Console.addToConsoleCommands(`celestials.add(${temp.Lookup})`, ()=>CelestialsManager.addCelestialByLookup(temp.Lookup));
+                    // systems.Console.addToConsoleCommands(`celestials.add(${temp.Lookup}) {number}`, (number) => { for(let i = 0; i < number; i++); });
+
+                    //add a celestial with amount to spawn | celestials.add(name) xx
+                    const regExp = `celestials.add\\(${temp.Lookup}\\)\\s\\d*`;
+                    systems.Console.addToConsoleCommands(new RegExp(regExp), (number) => { 
+                        let i = parseInt(number); 
+                        for(i = 0; i < number; i++) CelestialsManager.addCelestialByLookup(temp.Lookup);
+                    }, `celestials.add(${temp.Lookup}) amount`, 1);
+                }
+
+
+                    //DEBUG let app/user decide what celestials are added
+                //  for(let temp of this._templates) {
+                //     CelestialsManager.addCelestial(temp.Lookup);
+                //     console.log("ADDED: " + temp.Name);
+                // }
                 
-            }
+                //TODO: load a random unlocked celestial
+                // if(CelestialsManager._lookup.containsKey("solaris"))
+                //     await CelestialsManager.addCelestialByLookup("solaris");
 
 
-
-            //create console commands
-            systems.Console.addToConsoleCommands("celestials.removeAll()", ()=>CelestialsManager.removeAllCelestials());
-            //add celestials
-            for(let temp of CelestialsManager.Templates) {
-                systems.Console.addToConsoleCommands(`celestials.add(${temp.Lookup})`, ()=>CelestialsManager.addCelestialByLookup(temp.Lookup));
-            }
+                // for(let n = 0; n < 200; n++) {
+                // if(CelestialsManager._lookup.containsKey("solaris"))
+                //     await CelestialsManager.addCelestialByLookup("solaris");
+                // }
 
 
-             //DEBUG let app/user decide what celestials are added
-            //  for(let temp of this._templates) {
-            //     CelestialsManager.addCelestial(temp.Lookup);
-            //     console.log("ADDED: " + temp.Name);
-            // }
-            
-            //TODO: load a random unlocked celestial
-            // if(CelestialsManager._lookup.containsKey("solaris"))
-            //     await CelestialsManager.addCelestialByLookup("solaris");
-            // for(let n = 0; n < 200; n++) {
-            if(CelestialsManager._lookup.containsKey("solaris"))
-                await CelestialsManager.addCelestialByLookup("solaris");
-            // }
-
-
-            //listen to bounds leave -- call up event if we leave
-            managers.MouseManager.listenForMouseOut(App.Node, (x,y) => managers.MouseManager.simluateMouseUp(App.Node));
+                //listen to bounds leave -- call up event if we leave
+                managers.MouseManager.listenForMouseOut(App.Node, (x,y) => managers.MouseManager.simluateMouseUp(App.Node));
+                resolve();
+                
+            });
         }
 
         /**
@@ -147,6 +173,7 @@ namespace celestials.managers{
         }
 
         public static async addCelestialByLookup(lookup:string, addedByLineage?:boolean) {
+            console.log("ADDING CELESTIAL: " + lookup);
             addedByLineage = addedByLineage || false;
             //get celestial from lookup
             let celestial:Celestial = CelestialsManager._lookup.getValue(lookup);
@@ -159,8 +186,8 @@ namespace celestials.managers{
         public static async addCelestialByLookupAtPosition(lookup:string, x:number, y:number, addedByLineage?:boolean) {
             let celestial:Celestial = await CelestialsManager.addCelestialByLookup(lookup, addedByLineage);
             if(celestial == null) return null;
-            celestial.X = x;
-            celestial.Y = y + celestial.Height;
+            celestial.Transform.X = x;
+            celestial.Transform.Y = y + celestial.Height;
             return celestial;
         }
 
@@ -191,6 +218,10 @@ namespace celestials.managers{
                 this.removeCelestial(celestial, false);
             }
             CelestialsManager.callChangeRegistry(null);
+        }
+
+        public static getCelestialTemplate(lookup:string) {
+            return CelestialsManager.Templates.filter((cel) => cel.Lookup == lookup)[0];
         }
 
         public static update() {
@@ -243,8 +274,8 @@ namespace celestials.managers{
             x = x;
             y += (cel.Height * cel.RegistrationPoint.y);
             //set position
-            cel.X = x;
-            cel.Y = y;
+            cel.Transform.X = x;
+            cel.Transform.Y = y;
         }
         public static async onDrop(cel:Celestial, x:number, y:number) {
             console.log("DROPPED");
@@ -273,6 +304,7 @@ namespace celestials.managers{
 
         }
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
+        public static get Instance():CelestialsManager { return CelestialsManager._instance; }
         public static get Template():HTMLElement { return CelestialsManager._instance._template; }
         public static get Templates():Celestial[] { return CelestialsManager._instance._templates; }
         public static get Celestials():Celestial[] { return CelestialsManager._instance._celestials; }

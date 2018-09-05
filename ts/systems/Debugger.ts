@@ -18,6 +18,15 @@ namespace celestials.systems {
             let pauseKey = [Key.Code.p];
             InputManager.addBinding("debug__pauseApp", new KeyBinding(this._togglePause.bind(this), KeyBinding.State.Down, ...pauseKey));
 
+            InputManager.addBinding("debug__openConsole", new KeyBinding(() => {
+                systems.Console.Instance.open();
+            }, KeyBinding.State.Down, Key.Code.end));
+
+
+            InputManager.addBinding("debug__showSplash", new KeyBinding(() => {
+                systems.Splash.Instance.openStatic();
+            }, KeyBinding.State.Down, Key.Code["numpad 1"]));
+
             return;
 
             //debug
@@ -69,6 +78,8 @@ namespace celestials.systems {
 
             let stopWeatherKey = [Key.Code["numpad 1"]];
             InputManager.addBinding("debug__stopWeather", new KeyBinding(this._stopWeather.bind(this), KeyBinding.State.Down, ...stopWeatherKey));
+
+           
         }
 
 
@@ -140,7 +151,7 @@ namespace celestials.systems {
 
         private _snapToTop() {
             for(let cel of CelestialsManager.Celestials)
-                cel.Physics.snapToTop();
+                cel.Transform.snapToTop();
         }
 
         private _spawnCelestial() {

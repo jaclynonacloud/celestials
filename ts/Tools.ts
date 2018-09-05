@@ -23,8 +23,11 @@ namespace celestials {
 
     /**Creates an async wait function for the given amount of time in miliseconds. */
     export async function wait(time:number) {
-        return new Promise(async(res, rej) => {
-            await setTimeout(() => res(), time);
+        return await new Promise(async(res, rej) => {
+            let timeout = await setTimeout(function(){
+                window.clearTimeout(this);
+                res();
+            }, time);
         });            
     }
 
@@ -52,6 +55,38 @@ namespace celestials {
             .then(blob => blob.json())
             .then(json => callback(json))
             .catch(e => console.log(`Could not get file from ${filename}\n${e}`));
+    }
+
+    /**Fetches a json file and returns the results via a callback function. */
+    export async function fetchJsonC(filename:string, callback:Function) {
+        await fetch(filename)
+            .then(blob => blob.text())
+            .then(text => {
+                //remove any commented lines
+                while(text.indexOf("/**") != -1) {
+                    let textToRemove = text.slice(text.indexOf("/*"), text.indexOf("*/") + 2);
+                    text = text.replace(textToRemove, "");
+                }
+                //convert to json
+                callback(JSON.parse(text));
+            })
+            // .then(json => callback(json))
+            .catch(e => console.log(`Could not get file from ${filename}\n${e}`));
+    }
+
+    export async function fetchIni(filename:string, callback:Function) {
+        await fetch(filename)
+            .then(blob => blob.text())
+            .then(text => {
+                const lines = text.split("\n");
+                let results = new Map();
+                //get pairings
+                for(let line of lines) {
+                    const data = line.replace(";", "").split("=");
+                    results[data[0]] = data[1];
+                }
+                callback(results);
+            });
     }
 
     /**Basic linear interpolation. */
@@ -130,6 +165,13 @@ namespace celestials {
 
         splice(start:number, deleteCount?:number) {
             this._pairs.splice(start, deleteCount);
+        }
+
+        clone() {
+            let dict = new Dictionary<K, V>();
+            for(let i = 0; i < this._pairs.length; i++)
+                dict.add(this._pairs[i][0], this._pairs[i][1]);
+            return dict;
         }
 
         get List():Array<V> {

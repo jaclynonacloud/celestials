@@ -15,7 +15,6 @@ namespace celestials.entities {
         icon?:string;
         images?:{name:string, path:string}[];
         spritesheets?:ISpritesheet[];
-        physics?:engines.IPhysics;
         moods?:engines.IMoods;
         relationships?:engines.IRelationships;
         logic?:logic.ICelestialLogic;
@@ -36,7 +35,6 @@ namespace celestials.entities {
     export class Celestial extends Entity implements ICloneable<Celestial>, ILoadable, IUpdateable {
 
         private _sequencer:engines.CelestialSequencer;
-        private _physics:engines.Physics;
         private _moods:engines.Moods;
         private _relationships:engines.Relationships;
         private _logic:logic.CelestialLogic;
@@ -135,10 +133,10 @@ namespace celestials.entities {
 
         }
 
-        public drawCurrentFrame() {
+        public async drawCurrentFrame() {
             //TODO remove; redundant line below -- it is covered in the main draw -- for testing only
-            if(this.getImage(this._sequencer.CurrentFrame.name) == this._mainImage.src) return new Promise(function(resolve, reject) { resolve(this._mainImage);})
-            return this.draw(this.getImage(this._sequencer.CurrentFrame.name));
+            //if(this.getImage(this._sequencer.CurrentFrame.name) == this._mainImage.src) return await new Promise(function(resolve, reject) { resolve(this._mainImage);})
+            return await this.draw(this.getImage(this._sequencer.CurrentFrame.name));
         }
 
         public pause() {
@@ -290,6 +288,14 @@ namespace celestials.entities {
 
                     //set child as a descendant
                     this._descendants.push(spawn);
+
+                    //add a notification that the celestial was spawned
+                    let func = () => ui.menus.CelestialDetails.show(spawn);
+                    systems.Notifications.addNotification(`${spawn.Name} the ${spawn.Lookup} was spawned!`,
+                        systems.Notifications.TYPE.Notify,
+                        new Date(),
+                        func
+                    );
                 }
             }
             
@@ -297,6 +303,8 @@ namespace celestials.entities {
 
 
         public askToInteractWith(celestial:Celestial) {
+            //don't try to interact if we are spawning
+            if(this._sequencer.isCurrentState(engines.CelestialSequencer.STATE.Spawn)) return false;
             console.log("I WANT TO TALK TO : " + celestial.Name);
             //if we are already waiting, ignore this interaction proposal
             if(celestial.InteractingWith != null) return false;
@@ -388,6 +396,116 @@ namespace celestials.entities {
             return clone;
         }
 
+        /**Only called on the template celestial to set up images. */
+        public async preloadImages() {
+            console.log("STARTING IMAGE PRELOAD");
+            return await new Promise(async(resolve, reject) => {
+                if(this.Data == null) {
+                    reject("There is no data!");
+                    return;
+                }
+
+                //get data
+                const { images, spritesheets, path } = this.Data;
+
+                //iterate through each image
+                let promises = new Array();                           
+
+                    
+                if(images != null) {
+                    for(let imgData of images) {
+                        promises.push(
+                            await new Promise((res, rej) => {
+                                console.log("starting image load");
+                                try {
+                                    //go get the images to load
+                                    let img = document.createElement("img");
+                                    //listen for load
+                                    img.onload = async() => {
+                                        console.log("loaded image - " + this.Name);
+                                        //set the image
+                                        this.addImage(imgData.name, img.src)
+                                        // if(!this.addImage(imgData.name, img.src))
+                                        //     throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
+                                        res();
+                                    }
+                                    //load the image
+                                    img.src = path + imgData.path;
+                                }
+                                catch(e) {
+                                    rej(e);
+                                }
+                            })
+                        );
+                    }
+                }
+                //iterate through each spritesheet
+                if(spritesheets != null) {
+                    for(let spritesheet of spritesheets) {
+                        promises.push(
+                            await new Promise((res, rej) => {
+                                try {
+                                    console.log("starting spritesheet load");
+                                    //go get the images to load
+                                    let img = document.createElement("img");
+                                    //listen for laod
+                                    img.onload = () => {
+                                        //set each frame
+                                        for(let frame of spritesheet.frames) {
+                                            //give the chop
+                                            cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
+                                                //set as the image
+                                                // frame.src = crop.src;
+                                                this.addImage(frame.name, crop.src);
+                                                // if(!this.addImage(frame.name, crop.src))
+                                                //     throw new Error(`An image already exists belonging to ${this.Name} - ${frame.name}.  Please choose a unique name.`);
+                                                res();
+                                            });
+                                        }
+                                    }
+                                    //load the spritesheet image
+                                    img.src = path + spritesheet.path;
+                                }
+                                catch(e) {
+                                    rej(e);
+                                }
+                            })
+                        );
+                    }
+                }
+
+                //set icon
+                if(this.Data.icon != null) {
+                    promises.push(
+                        await new Promise((res, rej) => {
+                            let iconImg = document.createElement("img");
+
+                            iconImg.onload = () => {
+                                this._icon = iconImg;
+                                this._icon.style.filter = this._mainImage.style.filter;
+                                this._imagesLookup.add("icon", iconImg.src);
+                                res();
+                            }
+                            iconImg.onerror = () => { rej("Could not load icon on : " + this.Name); }
+
+                            iconImg.src = path + this.Data.icon ;
+                        })
+                    );                    
+                }
+                // else this._icon = this.MainImage.cloneNode(false) as HTMLImageElement;
+
+
+                console.log("Promises to load: " + promises.length);
+                //once all images are loaded - continue
+                await Promise.all(promises)
+                    .catch((error) => console.log("DIDN'T CREATE IMAGES \n" + error));
+
+                console.log("LOADED ALL IMAGES - " + this.Name);
+
+                resolve();
+            });
+        }
+
         /**
          * Loads the Celestial's graphics and other data.
          */
@@ -400,6 +518,8 @@ namespace celestials.entities {
                     this._sequencer = new engines.CelestialSequencer(this);
                     //create physics
                     this._physics = new engines.Physics(this);
+                    //create transform
+                    this._transform = new engines.Transform(this, this._physics);
                     //create moods
                     this._moods = new engines.Moods(this);
                     //create relationships
@@ -419,74 +539,15 @@ namespace celestials.entities {
 
 
                     //destructure data
-                    let { path, images, spritesheets, name, lookup } = this.Data;
+                    // let { path, images, spritesheets, name, lookup } = this.Data;
+                    const { images, spritesheets, name, lookup } = this.Data;
 
-
-                    //iterate through each image
-                    let promises = new Array();                           
+                    //get the images from the template
+                    const template = managers.CelestialsManager.getCelestialTemplate(this.Lookup);
+                    this._imagesLookup = template.ImagesLookup.clone();
+                    this._icon = template.Icon.cloneNode(true) as HTMLImageElement;
 
                     
-                    if(images != null) {
-                        for(let imgData of images) {
-                            promises.push(
-                                new Promise((res, rej) => {
-                                    try {
-                                        //go get the images to load
-                                        let img = document.createElement("img");
-                                        //listen for load
-                                        img.onload = () => {
-                                            //set the image
-                                            this.addImage(imgData.name, img.src)
-                                            // if(!this.addImage(imgData.name, img.src))
-                                            //     throw new Error(`An image already exists belonging to ${this.Name} - ${imgData.name}.  Please choose a unique name.`);
-                                            res();
-                                        }
-                                        //load the image
-                                        img.src = path + imgData.path;
-                                    }
-                                    catch(e) {
-                                        rej();
-                                    }
-                                })
-                            );
-                        }
-                    }
-                    //iterate through each spritesheet
-                    if(spritesheets != null) {
-                        for(let spritesheet of spritesheets) {
-                            promises.push(
-                                new Promise((res, rej) => {
-                                    try {
-                                        //go get the images to load
-                                        let img = document.createElement("img");
-                                        //listen for laod
-                                        img.onload = () => {
-                                            //set each frame
-                                            for(let frame of spritesheet.frames) {
-                                                //give the chop
-                                                cropImage(img, frame.x, frame.y, frame.w, frame.h, (crop) => {
-                                                    //set as the image
-                                                    // frame.src = crop.src;
-                                                    if(!this.addImage(frame.name, crop.src))
-                                                        throw new Error(`An image already exists belonging to ${this.Name} - ${frame.name}.  Please choose a unique name.`);
-                                                    res();
-                                                });
-                                            }
-                                        }
-                                        //load the spritesheet image
-                                        img.src = data.path + spritesheet.path;
-                                    }
-                                    catch(e) {
-                                        rej();
-                                    }
-                                })
-                            );
-                        }
-                    }
-
-
-                    //once all images are loaded - continue
-                    await Promise.all(promises);
 
                     console.log("loaded all images!");
                     //TEST REQUIREMENTS of this entity
@@ -503,6 +564,7 @@ namespace celestials.entities {
                     //put the container in
                     this._container.appendChild(this._node);
 
+                    //load images
 
                     console.log(this._imagesLookup.FullList);
                     //load the moods
@@ -523,30 +585,14 @@ namespace celestials.entities {
                     let hueVariation:number = randomRange(-this.GlobalVariation * 10, this.GlobalVariation * 10);
                     this._mainImage.style.filter = `hue-rotate(${hueVariation}deg)`;
                     
-                    //set icon
-                    if(this.Data.icon != null) {
-                        await new Promise((res, rej) => {
-                            let iconImg = document.createElement("img");
-
-                            iconImg.onload = () => {
-                                this._icon = iconImg;
-                                this._icon.style.filter = this._mainImage.style.filter;
-                                res();
-                            }
-                            iconImg.onerror = () => { rej("Could not load icon on : " + this.Name); }
-
-                            iconImg.src = data.path + this.Data.icon ;
-
-                        });
-                        
-                    }
-                    else this._icon = this.MainImage.cloneNode(false) as HTMLImageElement;
+                    
 
                     //DEBUG: Created a ui menu item to show current controls
                     this._overlayMenu = new ui.menus.CelestialOverlay(this);
+                    this._overlayMenu.show();
                     this._node.parentNode.appendChild(this._overlayMenu.Node);
 
-                    console.log("LOADED ALL OF : " + this.Name);
+                    console.warn("LOADED ALL OF : " + this.Name);
                     this._size = (this.Height / App.Bounds.Height) * this._scale;
                     resolve();
                     this._isLoaded = true;
@@ -562,7 +608,7 @@ namespace celestials.entities {
                     this._sequencer.addSequenceCompleteListener(this._eventsRegistry.getValue("sequenceComplete"));
                     this._sequencer.addStateChangeListener(this._eventsRegistry.getValue("stateChange"));
                     this._sequencer.addStateCompleteListener(this._eventsRegistry.getValue("stateComplete"));
-                    this._physics.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
+                    this._transform.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
                     //TODO I've setup the click event, don't readd unless removing this one
                     // managers.MouseManager.listenForMouseDown(this._node, (e) => this._onClicked(e));
                     managers.MouseManager.listenForDrag(this.MainImage,
@@ -578,7 +624,7 @@ namespace celestials.entities {
                         }
                     );
                     //on right click, show context menu
-                    managers.MouseManager.listenForRightClick(this.MainImage, () => ui.menus.CelestialContext.show(this));
+                    managers.MouseManager.listenForRightClick(this.MainImage, () => ui.menus.CelestialContext.show(this), "rightclick");
                     
                 }  
                 catch(e) {
@@ -599,10 +645,11 @@ namespace celestials.entities {
             this._sequencer.removeSequenceCompleteListener();
             this._sequencer.removeStateChangeListener();
             this._sequencer.removeStateCompleteListener();
-            this._physics.removeWallHitListener();
+            this._transform.removeWallHitListener();
 
             this._node.removeEventListener("click", this._eventsRegistry.getValue("click"));
             this._node.removeEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
+            managers.MouseManager.removeListener("rightclick", this._node);
         }
 
         public async update() {
@@ -629,6 +676,7 @@ namespace celestials.entities {
                 await this.drawCurrentFrame();
                 // console.log("DRAW");
                 await this._physics.update();
+                await this._transform.update();
                 // console.log("PHYSICS");
                 await this._moods.update();
             // }
@@ -675,7 +723,7 @@ namespace celestials.entities {
             this._logic.handleStateComplete();
         }
 
-        private _onWallHit(which:number) {
+        private _onWallHit(which:string) {
             console.log("Hit wall " + which);
             //tell logic
             this._logic.handleWallHit(which);
@@ -702,10 +750,14 @@ namespace celestials.entities {
         public get Data():ICelestial { return this._data as ICelestial; }
         public get Sequencer():engines.CelestialSequencer { return this._sequencer; }
         public get Physics():engines.Physics { return this._physics; }
+        public get Transform():engines.Transform { return this._transform; }
         public get Moods():engines.Moods { return this._moods; }
         public get Relationships():engines.Relationships { return this._relationships; }
         public get Logic():logic.CelestialLogic { return this._logic; }
-        public get Icon():HTMLImageElement { return this._icon; }
+        public get Icon():HTMLImageElement { 
+            if(this._icon == null) this._icon = this.MainImage.cloneNode(false) as HTMLImageElement;
+            return this._icon; 
+        }
 
         public get Paused():boolean { return this._paused; }
         public get IsControlled():boolean { return this._isControlled; }
@@ -714,12 +766,15 @@ namespace celestials.entities {
         public get Variation():number { return this._variation; }
         public get GlobalVariation():number { return this.Data.variation || 0; }
         public get Size():number { return this._size * App.Bounds.Height; }
+        public get SizeNormalized():number { 
+            const { min, max } = this.Data.scale;
+            const size = this.Size;
+            return (size - min) / (max - min);
+        }
         public get Mass():number {
             return this._size * this._physics.Gravity;
         }
         public get Age():number {
-            // let fakeDate = new Date("August 16, 2018");
-            // return (((new Date()).getTime() - fakeDate.getTime()) / 1000 / 60 / 60);
             return (((new Date()).getTime() - this._dateSpawned.getTime()) / 1000 / 60 / 60);
         }
 

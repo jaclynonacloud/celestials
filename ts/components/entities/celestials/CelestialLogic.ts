@@ -1,7 +1,9 @@
 ///<reference path="./../engines/Physics.ts" />
+///<reference path="./../engines/Transform.ts" />
 namespace celestials.logic {
     import Celestial = entities.Celestial;
     import Physics = engines.Physics;
+    import Transform = engines.Transform;
 
     export interface ICelestialLogic {
         updateRate?:number; //how often the update will be called
@@ -143,12 +145,12 @@ namespace celestials.logic {
          * Called by Physics engine when wall is hit.
          * @param which The wall that was hit.  Defined by Physics.Wall
          */
-        public handleWallHit(which:number) {
+        public handleWallHit(which:string) {
              //see if we hit the edges
              this._handleStateIntegrity(which);
             
             //see if we are hitting the floor from a fall
-            if(which == Physics.WALL.Bottom && this._celestial.Sequencer.isCurrentState(engines.CelestialSequencer.STATE.Fall)) {
+            if(which == Transform.WALL.Bottom && this._celestial.Sequencer.isCurrentState(engines.CelestialSequencer.STATE.Fall)) {
                 //look for a recover state
                 if(!this.startState(engines.CelestialSequencer.STATE.Recover))
                     this.next();
@@ -192,6 +194,7 @@ namespace celestials.logic {
                 case cs.STATE.Idle:
                 case cs.STATE.Walk:
                     this._celestial.Physics.zeroVelocity();
+                    this._celestial.Transform.zeroMoveSpeed();
                 case cs.STATE.Fall:
                     this._celestial.Physics.resetGravity();
                     // this._tryToFlipX(); //randomly flip when we start this state -- maybe
@@ -200,33 +203,37 @@ namespace celestials.logic {
                     //turn off gravity
                     this._celestial.Physics.setGravity(0);
                     this._celestial.Physics.zeroVelocity();
+                    this._celestial.Transform.zeroMoveSpeed();
                     //check wall
                     //if we haven't touched a wall, find the closest
-                    let lastTouchedWall = this._celestial.Physics.LastTouchedWall;
-                    if(lastTouchedWall != Physics.WALL.Left && lastTouchedWall != Physics.WALL.Right)
-                        lastTouchedWall = (this._celestial.Bounds.Center.x < App.Bounds.Center.x) ? Physics.WALL.Left : Physics.WALL.Right;
+                    let lastTouchedWall = this._celestial.Transform.LastTouchedWall;
+                    if(lastTouchedWall != Transform.WALL.Left && lastTouchedWall != Transform.WALL.Right)
+                        lastTouchedWall = (this._celestial.Bounds.Center.x < App.Bounds.Center.x) ? Transform.WALL.Left : Transform.WALL.Right;
                     switch(lastTouchedWall) {
-                        case Physics.WALL.Left:
-                            this._celestial.Physics.snapToLeft();
+                        case Transform.WALL.Left:
+                            this._celestial.Transform.snapToLeft();
                             this._celestial.setDirectionX(-1);
                             break;
-                        case Physics.WALL.Right:
-                            this._celestial.Physics.snapToRight();
+                        case Transform.WALL.Right:
+                            this._celestial.Transform.snapToRight();
                             this._celestial.setDirectionX(1);
                     }
                     break;
                 case cs.STATE.Hang:
                     this._celestial.Physics.zeroVelocity();
+                    this._celestial.Transform.zeroMoveSpeed();
                     this._celestial.Physics.setGravity(0);
-                    this._celestial.Physics.snapToTop();
+                    this._celestial.Transform.snapToTop();
                     break;
                 case cs.STATE.Hold:
                     this._celestial.Physics.zeroVelocity();
+                    this._celestial.Transform.zeroMoveSpeed();
                     this._celestial.Physics.setGravity(0);
                     break;
                 case cs.STATE.Spawn:
                 case cs.STATE.Interact:
                     this._celestial.Physics.zeroVelocity();
+                    this._celestial.Transform.zeroMoveSpeed();
                     this._celestial.Physics.resetGravity();
                     break;
 
@@ -258,7 +265,7 @@ namespace celestials.logic {
          * For example, if we are in a climbing state, but end up off the wall for whatever reason,
          * the state is no longer viable.
          */
-        async _handleStateIntegrity(wallHit?:number) {
+        async _handleStateIntegrity(wallHit?:string) {
             let cs = engines.CelestialSequencer;
             //handle nuances between state
             let lastState:string = this._celestial.Sequencer.LastState;
@@ -267,10 +274,10 @@ namespace celestials.logic {
             //if our state is controlled, handle the following FIRST
             if(this._celestial.IsControlled) {
                 //if we touch the top wall, just start hanging
-                if(this._celestial.Physics.isTouchingWall(engines.Physics.WALL.Top))
-                    if(this._tryToHang(engines.Physics.WALL.Top)) return;
+                if(this._celestial.Transform.isTouchingWall(Transform.WALL.Top))
+                    if(this._tryToHang(Transform.WALL.Top)) return;
                 //see if we are touching a wall
-                if(this._celestial.Physics.isTouchingWall(Physics.WALL.Left, Physics.WALL.Right)) {
+                if(this._celestial.Transform.isTouchingWall(Transform.WALL.Left, Transform.WALL.Right)) {
                     if(!this._tryToClimb(wallHit))
                         //if we don't want to climb, just flip around
                         this._celestial.flipX();
@@ -286,21 +293,23 @@ namespace celestials.logic {
                     if(!this._tryToClimb(wallHit))
                         //if we don't want to climb, just flip around
                         this._celestial.flipX();
+                    //if we hit the ceiling, try to hang
+                    this._tryToHang(wallHit);
                     break;
                 case cs.STATE.Climb:
                     //if we touch the roof, try to hang
                     if(this._tryToHang(wallHit)) break;
                     //make sure we are on the wall
-                    if(!this._celestial.Physics.isTouchingWall(Physics.WALL.Left, Physics.WALL.Right)) {
+                    if(!this._celestial.Transform.isTouchingWall(Transform.WALL.Left, Transform.WALL.Right)) {
                         this.nextState();                   
                         break;
                     }
                     //make sure we are facing the right direction
-                    if(this._celestial.Physics.isTouchingWall(Physics.WALL.Left) && this._celestial.Direction.x != -1) {
+                    if(this._celestial.Transform.isTouchingWall(Transform.WALL.Left) && this._celestial.Direction.x != -1) {
                         this.nextState();
                         break;
                     }
-                    if(this._celestial.Physics.isTouchingWall(Physics.WALL.Right) && this._celestial.Direction.x != 1) {
+                    if(this._celestial.Transform.isTouchingWall(Transform.WALL.Right) && this._celestial.Direction.x != 1) {
                         this.nextState();
                         break;
                     }
@@ -308,7 +317,7 @@ namespace celestials.logic {
                 case cs.STATE.Hang:
                     //flip if we touch a wall
                     if(wallHit != null)
-                        if(wallHit == Physics.WALL.Left || wallHit == Physics.WALL.Right)
+                        if(wallHit == Transform.WALL.Left || wallHit == Transform.WALL.Right)
                             this._celestial.flipX();
                     //make sure we are on the ceiling
                     if(wallHit == null)
@@ -320,12 +329,12 @@ namespace celestials.logic {
                     break;
                 case cs.STATE.Hold:
                     //if we touch the top wall, just start hanging
-                    if(this._celestial.Physics.isTouchingWall(engines.Physics.WALL.Top))
-                        this._tryToHang(engines.Physics.WALL.Top);
+                    if(this._celestial.Transform.isTouchingWall(Transform.WALL.Top))
+                        this._tryToHang(engines.Transform.WALL.Top);
                     //stop the hold if we are not controlled anymore
                     else if(!this._celestial.IsControlled) {
                         //if we are in the air, try falling first
-                        if(!this._celestial.Physics.isTouchingWall(engines.Physics.WALL.Bottom)) {
+                        if(!this._celestial.Transform.isTouchingWall(Transform.WALL.Bottom)) {
                             if(!this.startState(engines.CelestialSequencer.STATE.Fall))
                                 this.nextState(); //fallback
                         }
@@ -335,8 +344,8 @@ namespace celestials.logic {
                     break;
                 case cs.STATE.Fall:
                     //if we touched the ceiling, try to hang
-                    if(this._celestial.Physics.isTouchingWall(engines.Physics.WALL.Top)) {
-                        this._tryToHang(engines.Physics.WALL.Top);
+                    if(this._celestial.Transform.isTouchingWall(engines.Transform.WALL.Top)) {
+                        this._tryToHang(engines.Transform.WALL.Top);
                     }
                     break;
             }
@@ -437,12 +446,12 @@ namespace celestials.logic {
 
         /**How the walk is handled every update. */
         private _handleWalks() {
-            let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
+            const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
             //get the walk properties
-            let moveSpeed:number = frame.moveSpeed || 0;
-            let jumpForce:number = frame.jumpForce || 0;
+            const moveSpeed:number = frame.moveSpeed || 0;
+            const jumpForce:number = frame.jumpForce || 0;
             //look for property value
-            this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
+            this._celestial.Transform.setMoveXSpeed(moveSpeed * this._celestial.Direction.x);
             this._celestial.Physics.addForceY(-jumpForce);
         }
         /**How the last walk frame is handled. */
@@ -452,21 +461,21 @@ namespace celestials.logic {
 
         /**How the climb is handled ever update. */
         private _handleClimbs() {
-            let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
+            const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
             //get the climb properties
-            let moveSpeed:number = frame.moveSpeed || 10;
+            const moveSpeed:number = frame.moveSpeed || 10;
             //set the property
-            this._celestial.Physics.addForceY(-moveSpeed);
+            this._celestial.Transform.setMoveYSpeed(-moveSpeed);
         }
         /**How the last climb frame is handled. */
         private _completeClimbs() {
             // //jump off wall
-            switch(this._celestial.Physics.LastTouchedWall) {
-                case Physics.WALL.Left:
+            switch(this._celestial.Transform.LastTouchedWall) {
+                case Transform.WALL.Left:
                     this._celestial.Physics.addForceX(randomRange(35, 80));
                     this._celestial.flipX();
                     break;
-                case Physics.WALL.Right:
+                case Transform.WALL.Right:
                     this._celestial.Physics.addForceX(randomRange(-35, -80));
                     this._celestial.flipX();
                     break;
@@ -475,38 +484,39 @@ namespace celestials.logic {
 
         /**How the hang is handled every update. */
         private _handleHangs() {
-            let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
+            const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
             this._celestial.Physics.setGravity(0);
             //get the hang properties
-            let moveSpeed:number = frame.moveSpeed || 2;
+            const moveSpeed:number = frame.moveSpeed || 2;
             //set the properties
-            this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
+            this._celestial.Transform.setMoveXSpeed(moveSpeed * this._celestial.Direction.x);
         }
 
 
         /**How the fall is handled every update. */
         private _handleFalls() {
-            let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
-            // this._celestial.Physics.setGravity(0);
-            // //get the hang properties
-            // let moveSpeed:number = frame.moveSpeed || 2;
-            // //set the properties
-            // this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
+            const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
         }
 
         /**How the hold is handled every update. */
         private _handleHolds() {
-            let frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
-            // this._celestial.Physics.setGravity(0);
-            // //get the hang properties
-            // let moveSpeed:number = frame.moveSpeed || 2;
-            // //set the properties
-            // this._celestial.Physics.addForceX(moveSpeed * this._celestial.Direction.x);
-
+            const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
             
         }
         private _completeHolds() {
             //if we are in the air, try to fall
+        }
+
+        /**How the spawn frame is handled. */
+        private _handleSpawns() {
+            const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
+            if(frame.moveSpeed != null) this._celestial.Transform.setMoveXSpeed(frame.moveSpeed * this._celestial.Direction.x);
+            if(frame.jumpForce != null) this._celestial.Physics.addForceY(-frame.jumpForce);
+        }
+        /**How the interaction frame is handled. */
+        private _handleInteractions() {
+            const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
+            if(frame.jumpForce != null) this._celestial.Physics.addForceY(-frame.jumpForce);
         }
 
 
@@ -520,12 +530,12 @@ namespace celestials.logic {
 
 
 
-        private _tryToClimb(wallHit?:number):boolean {   
-            
+        private _tryToClimb(wallHit?:string):boolean {   
+            if(this._celestial.Sequencer.isCurrentState(engines.CelestialSequencer.STATE.Spawn)) return false;
             //if we hit a wall, check if we want to handle it
             if(wallHit != null) {
                 //see if we hit the edges
-                if(wallHit == Physics.WALL.Left || wallHit == Physics.WALL.Right) {
+                if(wallHit == Transform.WALL.Left || wallHit == Transform.WALL.Right) {
 
                     //see if we want to climb - uses the attention span of the climb sequence set
                     if(randomRange(0, 1) > this._celestial.Sequencer.CurrentSequenceSet.attentionSpan || 100 / 100) {
@@ -548,12 +558,11 @@ namespace celestials.logic {
             return true;
         }
 
-        private _tryToHang(wallHit?:number):boolean {
-            console.log("SHOULD I HANG? ", wallHit);
+        private _tryToHang(wallHit?:string):boolean {
+            if(this._celestial.Sequencer.isCurrentState(engines.CelestialSequencer.STATE.Spawn)) return false;
             if(wallHit == null) return false;
-            if(wallHit != Physics.WALL.Top) return false;
+            if(wallHit != Transform.WALL.Top) return false;
             //TODO see if we want to hang
-            console.log("TEST RANGE");
             if(randomRange(0, 1) > 0) {
                 //get the hang state
                 let state:string = this._celestial.Sequencer.changeState(engines.CelestialSequencer.STATE.Hang);

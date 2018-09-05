@@ -6,6 +6,10 @@ namespace celestials {
     export interface IUpdateable {
         update();
     }
+    export interface IPauseable {
+        resume();
+        pause();
+    }
     
     export interface ICloneable<T> {
         clone():T;

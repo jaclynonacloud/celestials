@@ -1,100 +1,91 @@
-namespace celestials.systems {
-    export interface IWeather {
-        node:HTMLElement;
-        startFunction:Function;
-        containers?:HTMLElement[];
-        duration?:number;
-        _index?:number;
-    }
-    export class Weather {
+///<reference path="weathers/Rain.ts"/>
+///<reference path="weathers/Snow.ts"/>
+namespace celestials.systems {    
+    import Rain = weathers.Rain;
+    import Snow = weathers.Snow;
+
+    export class Weather implements IUpdateable, IPauseable {
         public static get TYPE() { return Object.freeze({"None":"none", "Rain":"rain", "Snow":"snow"})}
         private static _instance:Weather;
         private _node:HTMLElement;
 
-        private _weatherLookup:Dictionary<string, IWeather>;
+        private _weathers:Map<string, weathers.WeatherAbstract>;
 
         private _usesWeather:boolean;
-        private _currentWeather:string;
+        private _currentWeather:weathers.WeatherAbstract;
 
         constructor(node) {
             Weather._instance = this;
             //test
             this._node = node;
             this._usesWeather = false;
-            this._currentWeather = "";
+            // this._currentWeather = "";
+            this._currentWeather = null;
 
 
-            this._weatherLookup = new Dictionary();
-            //define weather HERE -------------------------------
+            //setup weather
+            this._weathers = new Map();
+            console.log(this._weathers);
             //rain
-            this._weatherLookup.add(Weather.TYPE.Rain, {
-                node:this._node.querySelector(".raining"),
-                startFunction: () => this._makeItRain(50),
-                containers:[
-                    this._node.querySelector('.raindrops'),
-                    this._node.querySelector('.splatdrops'),
-                ]
-            });
+            this._weathers[Weather.TYPE.Rain] = new weathers.Rain(
+                this._node.querySelector(".raindrops"),
+                this._node.querySelector(".rain"),
+                this._node.querySelector(".splat"),
+                this._node.querySelector(".splatdrops")
+            );
             //snow
-            this._weatherLookup.add(Weather.TYPE.Snow, {
-                node:this._node.querySelector(".snowing"),
-                startFunction: () => this._makeItSnow(50),
-                containers:[
-                    this._node.querySelector('.snowflakes')
-                ]
-            });
+            this._weathers[Weather.TYPE.Snow] = new weathers.Snow(
+                this._node.querySelector(".snowflakes"),
+                this._node.querySelector(".snow")
+            );
+            
 
 
             //add console commands
-            //start weather
-            for(let weather of this._weatherLookup.FullList) {
-                let key = `weather.start(${weather[0]})`;
-                systems.Console.addToConsoleCommands(key, ()=>this.changeWeather(weather[0]));
+            for(let weather of Object.keys(this._weathers)) {
+                let key = `weather.start(${weather})`;
+                systems.Console.addToConsoleCommands(key, ()=>this.changeWeather(this._weathers[weather]));
             }
             //stop weather
             systems.Console.addToConsoleCommands(`weather.stop()`, ()=>this.stopWeather());
+            //kill weather
+            systems.Console.addToConsoleCommands(`weather.kill()`, ()=>this.killWeather());
+
+
+            this._node.classList.remove("hide");
         }
 
 
         /*---------------------------------------------- METHODS -------------------------------------*/
-        public async changeWeather(type:string) {
+        public async changeWeather(weather:weathers.WeatherAbstract) {
             if(!this._usesWeather) return;
             //check if this is type
-            if(!this._weatherLookup.containsKey(type)) {
-                console.log(`${type} is not a weather type!`);
+            const newWeather = weather;
+            if(newWeather == null) {
+                console.log(`${newWeather} is not a weather type!`);
                 return;
             }
 
             //if a last weather is playing, wait for it to clear up
-            if(this._currentWeather != "") {
+            if(this._currentWeather != null) {
                 await this.stopWeather();
             }
 
-            this._currentWeather = type;
-            //start the weather
-            this._weatherLookup.getValue(type).startFunction();
+            this._currentWeather = newWeather;
+            //star the weather
+            this._currentWeather.start();
         }
 
         public async stopWeather() {
-            return new Promise(async (res, rej) => {
-                console.log("STOPPING WEATHER");
-                //get active container
-                const containers = this._weatherLookup.getValue(this._currentWeather).containers;
-                //incrementally remove the elements
-                while(this._containersHaveChildren(containers)) {
-                // for(let i = containers[0].childNodes.length-1; i >= 0; i--) {
-                    //delete the first node
-                    for(let cont of containers) {
-                        await cont.childNodes[0].remove();
-                    }
-                    await wait(randomRange(0, 200));
-                    console.log("RMING")
-                }
+            if(this._currentWeather != null) {
+                await this._currentWeather.stop();
+            }          
+        }
 
-                console.log("DONE");
-                res();
-
-            });            
+        public async killWeather() {
+            if(this._currentWeather != null) {
+                await this._currentWeather.kill();
+            }
         }
 
         private _containersHaveChildren(containers:HTMLElement[]) {
@@ -106,90 +97,21 @@ namespace celestials.systems {
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
+        public resume() {
+            if(this._currentWeather != null) this._currentWeather.resume();
+        }
+        public pause() {
+            if(this._currentWeather != null) this._currentWeather.pause();
+        }
+        public update() {
+            if(this._currentWeather != null) this._currentWeather.update();
+        }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         /*---------------------------------------------- OVERRIDES -----------------------------------*/
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
-
-
-
-        
-
-
-
-
-
-
-
-
-        /*https://codemyui.com/configurable-rain-effect-css/*/
-        private async _makeItRain(amount:number = 100) {
-            //clear out everything
-            let rainDiv = this._node.querySelector(".raindrops");
-            let splatDiv = this._node.querySelector(".splatdrops");
-            while(rainDiv.childNodes.length > 0) rainDiv.childNodes[0].remove();
-            while(splatDiv.childNodes.length > 0) splatDiv.childNodes[0].remove();
-
-
-            let counter = amount;
-
-            while(--counter) {
-                console.log("NUM: " + counter);
-                //random
-                let randPos = randomRange(1, 98);
-                let randOffset = randomRange(2, 5);
-                let randDuration = randomRange(3, 6);
-                //create rain
-                let rain = document.createElement("div");
-                rain.classList.add("rain");
-                rain.style.left = `${randPos}%`;
-                rain.style.animationDelay = `-${randOffset}s`;
-                rain.style.animationDuration = `0.${randDuration}s`;
-                rainDiv.appendChild(rain);
-                //create splat
-                let splat = document.createElement("div");
-                splat.classList.add("splat");
-                splat.style.left = `${randPos}%`;
-                splat.style.animationDelay = `-${randOffset}s`;
-                splatDiv.appendChild(splat);
-                await wait(randomRange(100, 300));
-            }
-        }
-
-
-        private async _makeItSnow(amount:number = 100) {
-            //clear out everything
-            let snowDiv = this._node.querySelector(".snowflakes");
-            while(snowDiv.childNodes.length > 0) snowDiv.childNodes[0].remove();
-
-
-            let counter = amount;
-
-            while(--counter) {
-                console.log("NUM: " + counter);
-                //random
-                let randPos = randomRange(1, 98);
-                let randOffset = randomRange(2, 5);
-                let randDuration = randomRange(3, 8);
-                //create snow
-                let snow = document.createElement("div");
-                snow.classList.add("snow");
-                snow.style.left = `${randPos}%`;
-                snow.style.animationDelay = `-${randOffset}s`;
-                snow.style.animationDuration = `${randDuration}s`;
-                snowDiv.appendChild(snow);
-                await wait(randomRange(200, 600));
-            }
-        }
-
-
-        
-
-
-        
-
-
-
         public static get Instance():Weather { return Weather._instance; }
+        public static set UseWeather(value:boolean) { Weather.Instance._usesWeather = value; }
+        public static get CurrentWeather():weathers.WeatherAbstract { return Weather.Instance._currentWeather; }
         
     }
 }
