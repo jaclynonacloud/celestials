@@ -60,7 +60,7 @@ namespace celestials {
             console.log("SETUP");
 
             //read the .ini
-            await fetchIni("../res/celestials.ini", (data) => {
+            await fetchIni("./res/celestials.ini", (data) => {
                 console.warn(data);
                 App._maxCelestials = data.maxCelestials || 10;
                 console.log("MAX: " + App._maxCelestials);
@@ -121,7 +121,7 @@ namespace celestials {
             systems.Notifications.addNotification("This is a test!", systems.Notifications.TYPE.Notify);
             systems.Notifications.addNotification("This is a test for failure!", systems.Notifications.TYPE.Fail);
 
-            return;
+            // return;
 
             //load in initial celestial
             if(managers.CelestialsManager.getTemplateByLookup("solaris") != null)

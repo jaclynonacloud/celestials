@@ -31,9 +31,11 @@ namespace celestials.systems {
         public openStatic() {
             this.open();
             let clickEvent = (e:MouseEvent) => {
-                this._node.removeEventListener("mouseup", clickEvent);
-                this._node.classList.remove("temp-cursor");
-                this.close();
+                if(e.button == 0) {
+                    this.close();
+                    this._node.classList.remove("temp-cursor");
+                    this._node.removeEventListener("mouseup", clickEvent);
+                }
             };
             this._node.classList.add("temp-cursor");
             this._node.addEventListener("mouseup", clickEvent);

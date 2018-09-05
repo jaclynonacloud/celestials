@@ -174,6 +174,7 @@
          */
         public static startDrag(node:HTMLElement) {
             MouseManager._activeElement = node;
+            this.simuluateMouseDown(node);
         }
         
 
@@ -183,7 +184,7 @@
          * @param x (Optional) Sets the clientX value for the event.
          * @param y (Optional) Sets the clientY value for the event.
          */
-        public static simluateMouseDown(node:HTMLElement, x?:number, y?:number) {
+        public static simuluateMouseDown(node:HTMLElement, x?:number, y?:number) {
             let mouseEvent:MouseEvent = new MouseEvent('mousedown', {
                 bubbles : true,
                 cancelable : true,

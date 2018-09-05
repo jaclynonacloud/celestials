@@ -263,7 +263,7 @@ namespace celestials.managers{
         /*---------------------------------------------- INTERFACES ----------------------------------*/
         /*---------------------------------------------- EVENTS --------------------------------------*/
         public static onGrab(cel:Celestial, x:number, y:number) {
-            console.log("GRABBED");
+            console.log("GRABBED : " + cel.Name);
             //add celestial to top of stack briefly
             cel.Node.style.zIndex = '100';
             cel.takeControl();
@@ -273,6 +273,7 @@ namespace celestials.managers{
             //get position
             x = x;
             y += (cel.Height * cel.RegistrationPoint.y);
+            console.log("SET ME: ", x, y);
             //set position
             cel.Transform.X = x;
             cel.Transform.Y = y;

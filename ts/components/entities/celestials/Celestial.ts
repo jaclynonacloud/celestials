@@ -572,12 +572,11 @@ namespace celestials.entities {
                     //load the first logic
                     await this._logic.load();
 
+                    //load other engines
+                    await this._transform.load();
 
-                    //send to collision
-                    systems.Collision.addToCollisionSystem(this);
-                    //ask for collision object
-                    this._collisionObject = systems.Collision.getCollisionObject(this);
 
+                    
 
                     //fix image problem
                     (this._node.querySelector(".graphics") as HTMLElement).ondragstart = function() { return false; }
@@ -594,6 +593,15 @@ namespace celestials.entities {
 
                     console.warn("LOADED ALL OF : " + this.Name);
                     this._size = (this.Height / App.Bounds.Height) * this._scale;
+
+
+                    //send to collision
+                    systems.Collision.addToCollisionSystem(this);
+                    //ask for collision object
+                    this._collisionObject = systems.Collision.getCollisionObject(this);
+
+
+
                     resolve();
                     this._isLoaded = true;
 
@@ -601,6 +609,8 @@ namespace celestials.entities {
                     //DEBUG: THIS IS A TEST
                     //create context menu
                     // ui.CelestialContext.show(this);
+
+                    console.warn("SIZE NORMALIZED: " + this.SizeNormalized);
 
                     
 
@@ -769,7 +779,7 @@ namespace celestials.entities {
         public get SizeNormalized():number { 
             const { min, max } = this.Data.scale;
             const size = this.Size;
-            return (size - min) / (max - min);
+            return ((size - min) / (max - min)) / 100;
         }
         public get Mass():number {
             return this._size * this._physics.Gravity;

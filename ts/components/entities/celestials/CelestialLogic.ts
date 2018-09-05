@@ -23,6 +23,9 @@ namespace celestials.logic {
         private _drawingFrame:boolean;
         private _pauseIntegrityCheck:boolean;
 
+        private _sizeMultiplier:number;
+        private _sizeJumpMultiplier:number;
+
 
         constructor(celestial:Celestial, data:ICelestialLogic) {
             this._celestial = celestial;
@@ -36,6 +39,10 @@ namespace celestials.logic {
             this._drawingFrame = false;
 
             this._pauseIntegrityCheck = false;
+
+
+            this._sizeMultiplier = 1 + this._celestial.SizeNormalized;
+            this._sizeJumpMultiplier = 1 + (this._celestial.SizeNormalized * 0.25);
 
             //check for data
             if(data != null) {
@@ -448,8 +455,8 @@ namespace celestials.logic {
         private _handleWalks() {
             const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
             //get the walk properties
-            const moveSpeed:number = frame.moveSpeed || 0;
-            const jumpForce:number = frame.jumpForce || 0;
+            const moveSpeed:number = frame.moveSpeed * this._sizeMultiplier || 0;
+            const jumpForce:number = frame.jumpForce * this._sizeJumpMultiplier || 0;
             //look for property value
             this._celestial.Transform.setMoveXSpeed(moveSpeed * this._celestial.Direction.x);
             this._celestial.Physics.addForceY(-jumpForce);
@@ -463,7 +470,7 @@ namespace celestials.logic {
         private _handleClimbs() {
             const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
             //get the climb properties
-            const moveSpeed:number = frame.moveSpeed || 10;
+            const moveSpeed:number = frame.moveSpeed * this._sizeMultiplier || 10;
             //set the property
             this._celestial.Transform.setMoveYSpeed(-moveSpeed);
         }
@@ -487,7 +494,7 @@ namespace celestials.logic {
             const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
             this._celestial.Physics.setGravity(0);
             //get the hang properties
-            const moveSpeed:number = frame.moveSpeed || 2;
+            const moveSpeed:number = frame.moveSpeed & this._sizeMultiplier || 2;
             //set the properties
             this._celestial.Transform.setMoveXSpeed(moveSpeed * this._celestial.Direction.x);
         }
@@ -507,16 +514,18 @@ namespace celestials.logic {
             //if we are in the air, try to fall
         }
 
+        
+
         /**How the spawn frame is handled. */
         private _handleSpawns() {
             const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
-            if(frame.moveSpeed != null) this._celestial.Transform.setMoveXSpeed(frame.moveSpeed * this._celestial.Direction.x);
-            if(frame.jumpForce != null) this._celestial.Physics.addForceY(-frame.jumpForce);
+            if(frame.moveSpeed != null) this._celestial.Transform.setMoveXSpeed(frame.moveSpeed * this._sizeMultiplier * this._celestial.Direction.x);
+            if(frame.jumpForce != null) this._celestial.Physics.addForceY(-frame.jumpForce * this._sizeJumpMultiplier);
         }
         /**How the interaction frame is handled. */
         private _handleInteractions() {
             const frame:engines.ICelestialFrame = this._celestial.Sequencer.CurrentFrame;
-            if(frame.jumpForce != null) this._celestial.Physics.addForceY(-frame.jumpForce);
+            if(frame.jumpForce != null) this._celestial.Physics.addForceY(-frame.jumpForce * this._sizeJumpMultiplier);
         }
 
 
@@ -537,7 +546,7 @@ namespace celestials.logic {
                 //see if we hit the edges
                 if(wallHit == Transform.WALL.Left || wallHit == Transform.WALL.Right) {
 
-                    //see if we want to climb - uses the attention span of the climb sequence set
+                    //see if we want to climb - uses the attention span of the current sequence set
                     if(randomRange(0, 1) > this._celestial.Sequencer.CurrentSequenceSet.attentionSpan || 100 / 100) {
 
                         //get the climb state

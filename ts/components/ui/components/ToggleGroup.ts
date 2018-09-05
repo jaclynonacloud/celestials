@@ -11,7 +11,9 @@ namespace celestials.ui.components {
             this._collapsableNode = collapsableNode;
             this._changeListener = changeListener;
 
-            this._collapsableHeight = (this._collapsableNode != null) ? this._collapsableNode.scrollHeight : 0;
+            // this._collapsableHeight = (this._collapsableNode != null) ? this._collapsableNode.scrollHeight : 0;
+            this._collapsableHeight = (this._collapsableNode != null) ? this._collapsableNode.getBoundingClientRect().height : 0;
+            console.warn("SET SIZE OF TOGGLE: " + this._collapsableHeight);
 
             this._inputNode.addEventListener("change", this._onToggleChanged.bind(this));
 
@@ -35,7 +37,9 @@ namespace celestials.ui.components {
             //if there is a collapsable group, show it
             if(this._collapsableNode != null) {
                 if(this._inputNode.checked) {
-                    this._collapsableNode.style.maxHeight = `${this._collapsableHeight}px`;
+                    console.warn(this._collapsableHeight);
+                    // this._collapsableNode.style.maxHeight = `${this._collapsableHeight}px`;
+                    this._collapsableNode.style.maxHeight = `300px`;
                     this._collapsableNode.classList.remove("hide");
                 }
                 else {

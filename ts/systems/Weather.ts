@@ -14,7 +14,7 @@ namespace celestials.systems {
         private _usesWeather:boolean;
         private _currentWeather:weathers.WeatherAbstract;
 
-        constructor(node) {
+        constructor(node:HTMLElement) {
             Weather._instance = this;
             //test
             this._node = node;

@@ -30,8 +30,12 @@ namespace celestials.systems {
             visual.classList.add("collision");
             // entity.Node.appendChild(visual);
             App.Node.appendChild(visual);
+
+            const colObject:ICollisionObject = {entity, rect, visual, isOverlapping:false};
             //add to system
-            Collision._instance._objects.push({entity, rect, visual, isOverlapping:false});
+            Collision._instance._objects.push(colObject);
+
+            Collision.updateCollisionObject(colObject, Collision.COLLISION_SIZE);            
         }
 
         // public static hasOverlap(a:ICollisionObject, b:ICollisionObject) {
@@ -124,21 +128,7 @@ namespace celestials.systems {
             //get the bounds
             let colSize = Collision.COLLISION_SIZE;
             for(let obj of Collision._instance._objects) {
-                let bounds = obj.entity.MainImage.getBoundingClientRect();
-                obj.rect = new Rect(
-                    bounds.left - colSize,
-                    bounds.top - colSize,
-                    bounds.width + (colSize * 2),
-                    bounds.height + (colSize * 2)
-                );
-
-                if(Collision._instance._showCollisionBounds) {
-                    //update the visual
-                    obj.visual.style.left = `${obj.rect.X}px`;
-                    obj.visual.style.top = `${obj.rect.Y}px`;
-                    obj.visual.style.width = `${obj.rect.Width}px`;
-                    obj.visual.style.height = `${obj.rect.Height}px`;
-                }
+                Collision.updateCollisionObject(obj, colSize);
             }
 
             // //once the collision sizes are set, if the rect overlaps with any other collider, call the pair of collider's callbacks
@@ -158,6 +148,24 @@ namespace celestials.systems {
             //     }
             //     obj.isOverlapping = isOverlapping;
             // }
+        }
+
+        public static updateCollisionObject(obj, colSize) {
+            let bounds = obj.entity.MainImage.getBoundingClientRect();
+            obj.rect = new Rect(
+                bounds.left - colSize,
+                bounds.top - colSize,
+                bounds.width + (colSize * 2),
+                bounds.height + (colSize * 2)
+            );
+
+            if(Collision._instance._showCollisionBounds) {
+                //update the visual
+                obj.visual.style.left = `${obj.rect.X}px`;
+                obj.visual.style.top = `${obj.rect.Y}px`;
+                obj.visual.style.width = `${obj.rect.Width}px`;
+                obj.visual.style.height = `${obj.rect.Height}px`;
+            }
         }
         /*---------------------------------------------- GETS & SETS ---------------------------------*/
     }
