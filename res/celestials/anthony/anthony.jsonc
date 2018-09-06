@@ -1,0 +1,57 @@
+{
+    "lookup" : "anthony",
+    "name" : "Anthony",
+    "path" : "./res/celestials/anthony/",
+    "position" : { "x" : 300, "y" : 200 },
+    "scale" : { "min" : 1, "max" : 1 },
+    "maxSpawns" : 3,
+    "variation" : 2,
+
+    "physics" : {
+        "degradeVelocity" : 0.75
+    },
+    
+    "logic" :  {
+        "updateRate" : 50,
+        "eagerness" : 5,
+        "attentionSpan" : 60
+    },
+
+    "images" : [
+        {
+            "name" : "idle0",
+            "path" : "idle0.png"
+        }
+    ],
+
+
+    "sequences" : {
+        "updateRate" : 1,
+        "idles" : {
+            "attentionSpan" : 20,
+            "sequences" : [
+            {
+                "name" : "shortIdle",
+                "duration" : 350,
+                "looping" : true,
+                "frames" : [
+                    {"name" : "idle0", "hold" : 30 }
+                ]
+            }
+        ]},
+        "walks" : {
+            "attentionSpan" : 80,
+            "sequences" : [
+            {
+                "name" : "Short Walk",
+                "duration" : 50,
+                "looping" : true,
+                "frames" : [
+                    {"name" : "idle0", "hold" : 30, "moveSpeed" : 1 },
+                    {"name" : "idle0", "hold" : 10, "moveSpeed" : 0.5 }
+                ]
+            }
+        ]}
+    }
+
+}
