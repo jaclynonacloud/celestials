@@ -130,6 +130,7 @@
         z-index: 50;
 
         .celestial {
+            cursor: pointer;
             &:hover {
                 background: unset;
             }
@@ -153,6 +154,7 @@
             }
 
             &--locked {
+                cursor: default;
                 .celestial__image {
                     background: mix($menuBackgroundColorDark, black, 80);
                     
