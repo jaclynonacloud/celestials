@@ -59,9 +59,9 @@ namespace celestials.managers{
                 //for now, just give the folders
                 if(files == null)
                 files = [
-                    "./res/celestials/anthony/anthony.json",
+                    "./res/celestials/anthony/anthony.jsonc",
                     "./res/celestials/solaris/solaris.jsonc",
-                    "./res/celestials/victor/victor.json"
+                    "./res/celestials/victor/victor.jsonc"
                 ];
 
                 let preloadPromises = new Array();
@@ -274,13 +274,11 @@ namespace celestials.managers{
             //get position
             x = x;
             y += (cel.Height * cel.RegistrationPoint.y);
-            console.log("SET ME: ", x, y);
             //set position
             cel.Transform.X = x;
             cel.Transform.Y = y;
         }
         public static async onDrop(cel:Celestial, x:number, y:number) {
-            console.log("DROPPED");
             cel.releaseControl();
             cel.Physics.resetGravity();
             //put celestial back where it came from

@@ -43,6 +43,7 @@
     /** Physics */
     "physics" : {
         /** (Optional) Normalized value that decides how quickly a velocity degrades.  0-No degrade, 1-Immediate degradation Default:0.75 */
+        /** Lower degrade number is more "floaty", while higher feels like a brick. */
         "degradeVelocity" : 0.1,
         /** (Optional) The celestial's personal gravity. Default:9.81 */
         "gravity" : 20

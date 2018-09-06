@@ -258,10 +258,9 @@ namespace celestials.logic {
 
             //climb > hang
             console.log(lastState, currentState);
-            //push off wall, flip direction
+            //push away from wall
             if(lastState == cs.STATE.Climb && currentState == cs.STATE.Hang) {
                 console.log("I AM USING THE NUANCE");
-                // this._celestial.flipX();
                 this._celestial.Physics.addForceX(randomRange(20, 30) * this._celestial.Direction.x);
             }
         }
@@ -476,7 +475,7 @@ namespace celestials.logic {
         }
         /**How the last climb frame is handled. */
         private _completeClimbs() {
-            // //jump off wall
+            //jump off wall
             switch(this._celestial.Transform.LastTouchedWall) {
                 case Transform.WALL.Left:
                     this._celestial.Physics.addForceX(randomRange(35, 80));

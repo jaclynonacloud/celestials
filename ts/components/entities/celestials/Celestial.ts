@@ -93,8 +93,6 @@ namespace celestials.entities {
             this._eventsRegistry.add("stateChange", this._onStateChange.bind(this));
             this._eventsRegistry.add("stateComplete", this._onStateComplete.bind(this));
             this._eventsRegistry.add("wallHit", this._onWallHit.bind(this));
-            // this._eventsRegistry.add("click", this._onClicked.bind(this));
-            this._eventsRegistry.add("rightClick", this._onRightClicked.bind(this));
         }
 
         /*---------------------------------------------- METHODS -------------------------------------*/
@@ -614,6 +612,7 @@ namespace celestials.entities {
                     this._transform.addWallHitListener(this._eventsRegistry.getValue("wallHit"));
                     //TODO I've setup the click event, don't readd unless removing this one
                     // managers.MouseManager.listenForMouseDown(this._node, (e) => this._onClicked(e));
+                    // managers.MouseManager.listenForDrag(this.MainImage,
                     managers.MouseManager.listenForDrag(this.MainImage,
                         (x,y) => {
                             managers.CelestialsManager.onGrab(this, x, y);
@@ -624,7 +623,7 @@ namespace celestials.entities {
                         (x,y) => {
                             managers.CelestialsManager.onDrop(this, x, y);
                             // this._logic.tryEndState(engines.CelestialSequencer.STATE.Hold);
-                        }
+                        }, "celDrag"
                     );
                     //on right click, show context menu
                     managers.MouseManager.listenForRightClick(this.MainImage, () => ui.menus.CelestialContext.show(this), "rightclick");
@@ -640,19 +639,19 @@ namespace celestials.entities {
         
 
         /**
-         * Unloads the Celestial's graphics and other data.
+         * Unloads the Celestial's events and other data.
          */
-        public unload() {
+        public async unload() {
+            await super.unload();
 
-            //remove listeners
-            this._sequencer.removeSequenceCompleteListener();
-            this._sequencer.removeStateChangeListener();
-            this._sequencer.removeStateCompleteListener();
-            this._transform.removeWallHitListener();
-
-            this._node.removeEventListener("click", this._eventsRegistry.getValue("click"));
-            this._node.removeEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
-            managers.MouseManager.removeListener("rightclick", this._node);
+            //unload engines
+            await this._sequencer.unload();
+            await this._moods.unload();
+            await this._relationships.unload();
+            
+            //remove global listeners
+            await managers.MouseManager.removeListener("rightclick", this.MainImage);
+            await managers.MouseManager.removeListener("celDrag", this.MainImage);
         }
 
         public async update() {
@@ -771,6 +770,8 @@ namespace celestials.entities {
         public get Size():number { return this._size * App.Bounds.Height; }
         public get SizeNormalized():number { 
             const { min, max } = this.Data.scale;
+            //if the min/max are equal (i.e. min:1, max:1) return 1 so we don't get an infinite number issue
+            if(min == max) return 1;
             const size = this.Size;
             return ((size - min) / (max - min)) / 100;
         }

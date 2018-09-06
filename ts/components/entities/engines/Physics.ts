@@ -5,7 +5,7 @@ namespace celestials.engines {
         usesGravity?:boolean;
     }
     
-    export class Physics implements IUpdateable {
+    export class Physics implements IUpdateable, ILoadable {
         public static get DEF_GRAVITY():number { return 9.81; }
         private _entity:entities.Entity;
         private _gravity:number;
@@ -57,7 +57,7 @@ namespace celestials.engines {
             this._gravity = this._entity.Data.physics.gravity || Physics.DEF_GRAVITY;
         }
 
-        correctVelocity() {
+        public correctVelocity() {
             //get properties
             let screenBounds:Rect = App.Bounds;
             let entityBounds:Rect = this._entity.Bounds;
@@ -69,7 +69,14 @@ namespace celestials.engines {
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
-        async update() {
+        public async load() {
+
+        }
+        public async unload() {
+
+        }
+        
+        public async update() {
             this._velocity.x = lerp(this._velocity.x, 0, this._degradeVelocity);
             this._velocity.y = lerp(this._velocity.y, ((this._usesGravity) ? this._gravity : 0), this._degradeVelocity);
             

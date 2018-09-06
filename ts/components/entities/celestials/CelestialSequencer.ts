@@ -39,7 +39,7 @@ namespace celestials.engines {
 
     
 
-    export class CelestialSequencer implements IUpdateable {
+    export class CelestialSequencer implements IUpdateable, ILoadable {
         public static get STATE() { return Object.freeze({
             "Idle" : "idles",
             "Walk" : "walks",
@@ -216,6 +216,15 @@ namespace celestials.engines {
         }
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
+        public async load() {
+
+        }
+        public async unload() {
+            this.removeSequenceCompleteListener();
+            this.removeStateChangeListener();
+            this.removeStateCompleteListener();
+        }
+
         public update() {
 
             return new Promise((resolve, reject) => {

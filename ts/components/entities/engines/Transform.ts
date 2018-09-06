@@ -4,7 +4,7 @@ namespace celestials.engines {
         randomPosition?:boolean;
     }
     
-    export class Transform implements IUpdateable {
+    export class Transform implements IUpdateable, ILoadable {
         public static get WALL() { return Object.freeze({
             "Top":"top", 
             "Right":"right", 
@@ -150,21 +150,21 @@ namespace celestials.engines {
 
         /*---------------------------------------------- ABSTRACTS -----------------------------------*/
         /*---------------------------------------------- INTERFACES ----------------------------------*/
-        public async update() {
-
-            this.moveX(this._moveSpeed.x);
-            this.moveY(this._moveSpeed.y);
-            
-            await this.keepInBounds();
-        }
-
         public async load() {
             //set initial position
             this.X = this._position.x;
             this.Y = this._position.y;
         }
         public async unload() {
+            this.removeWallHitListener();
+        }
 
+        public async update() {
+
+            this.moveX(this._moveSpeed.x);
+            this.moveY(this._moveSpeed.y);
+            
+            await this.keepInBounds();
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         /*---------------------------------------------- GETS & SETS ---------------------------------*/

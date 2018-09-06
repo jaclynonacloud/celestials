@@ -874,6 +874,19 @@ var celestials;
                 });
             };
             Entity.prototype.unload = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0: return [4, this._transform.unload()];
+                            case 1:
+                                _a.sent();
+                                return [4, this._physics.unload()];
+                            case 2:
+                                _a.sent();
+                                return [2];
+                        }
+                    });
+                });
             };
             Object.defineProperty(Entity.prototype, "Node", {
                 get: function () { return this._node; },
@@ -1151,7 +1164,6 @@ var celestials;
                 _this._eventsRegistry.add("stateChange", _this._onStateChange.bind(_this));
                 _this._eventsRegistry.add("stateComplete", _this._onStateComplete.bind(_this));
                 _this._eventsRegistry.add("wallHit", _this._onWallHit.bind(_this));
-                _this._eventsRegistry.add("rightClick", _this._onRightClicked.bind(_this));
                 return _this;
             }
             Celestial.prototype.draw = function (src) {
@@ -1630,7 +1642,7 @@ var celestials;
                                                     _this._logic.startState(celestials.engines.CelestialSequencer.STATE.Hold);
                                                 }, function (x, y) { return celestials.managers.CelestialsManager.onDrag(_this, x, y); }, function (x, y) {
                                                     celestials.managers.CelestialsManager.onDrop(_this, x, y);
-                                                });
+                                                }, "celDrag");
                                                 celestials.managers.MouseManager.listenForRightClick(this.MainImage, function () { return celestials.ui.menus.CelestialContext.show(_this); }, "rightclick");
                                                 return [3, 7];
                                             case 6:
@@ -1647,13 +1659,31 @@ var celestials;
                 });
             };
             Celestial.prototype.unload = function () {
-                this._sequencer.removeSequenceCompleteListener();
-                this._sequencer.removeStateChangeListener();
-                this._sequencer.removeStateCompleteListener();
-                this._transform.removeWallHitListener();
-                this._node.removeEventListener("click", this._eventsRegistry.getValue("click"));
-                this._node.removeEventListener("contextmenu", this._eventsRegistry.getValue("rightClick"));
-                celestials.managers.MouseManager.removeListener("rightclick", this._node);
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0: return [4, _super.prototype.unload.call(this)];
+                            case 1:
+                                _a.sent();
+                                return [4, this._sequencer.unload()];
+                            case 2:
+                                _a.sent();
+                                return [4, this._moods.unload()];
+                            case 3:
+                                _a.sent();
+                                return [4, this._relationships.unload()];
+                            case 4:
+                                _a.sent();
+                                return [4, celestials.managers.MouseManager.removeListener("rightclick", this.MainImage)];
+                            case 5:
+                                _a.sent();
+                                return [4, celestials.managers.MouseManager.removeListener("celDrag", this.MainImage)];
+                            case 6:
+                                _a.sent();
+                                return [2];
+                        }
+                    });
+                });
             };
             Celestial.prototype.update = function () {
                 return __awaiter(this, void 0, void 0, function () {
@@ -1817,6 +1847,8 @@ var celestials;
             Object.defineProperty(Celestial.prototype, "SizeNormalized", {
                 get: function () {
                     var _a = this.Data.scale, min = _a.min, max = _a.max;
+                    if (min == max)
+                        return 1;
                     var size = this.Size;
                     return ((size - min) / (max - min)) / 100;
                 },
@@ -2598,9 +2630,9 @@ var celestials;
                                             case 0:
                                                 if (files == null)
                                                     files = [
-                                                        "./res/celestials/anthony/anthony.json",
+                                                        "./res/celestials/anthony/anthony.jsonc",
                                                         "./res/celestials/solaris/solaris.jsonc",
-                                                        "./res/celestials/victor/victor.json"
+                                                        "./res/celestials/victor/victor.jsonc"
                                                     ];
                                                 preloadPromises = new Array();
                                                 _loop_6 = function (file) {
@@ -2826,7 +2858,6 @@ var celestials;
             CelestialsManager.onDrag = function (cel, x, y) {
                 x = x;
                 y += (cel.Height * cel.RegistrationPoint.y);
-                console.log("SET ME: ", x, y);
                 cel.Transform.X = x;
                 cel.Transform.Y = y;
             };
@@ -2834,7 +2865,6 @@ var celestials;
                 return __awaiter(this, void 0, void 0, function () {
                     var _a, lastX, lastY, flingX, flingY;
                     return __generator(this, function (_b) {
-                        console.log("DROPPED");
                         cel.releaseControl();
                         cel.Physics.resetGravity();
                         cel.Node.style.zIndex = "" + (cel.Data.zIndex || 1);
@@ -3657,28 +3687,6 @@ var celestials;
                 if (mousedown.containsKey(target))
                     mousedown.getValue(target)();
             };
-            MouseManager.prototype._onRightClick = function (e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                var target = e.target.closest("[data-clickable]");
-                if (target == null)
-                    return;
-                var rightclick = MouseManager._registry.rightclick;
-                if (rightclick.containsKey(target))
-                    rightclick.getValue(target)(e.clientX, e.clientY);
-            };
-            MouseManager.prototype._onMouseMove = function (e) {
-                MouseManager._lastMousePosition = MouseManager._mousePosition;
-                MouseManager._mousePosition = { x: e.clientX, y: e.clientY };
-                var drag = MouseManager._registry.drag;
-                if (MouseManager._activeElement != null) {
-                    if (drag.containsKey(MouseManager._activeElement)) {
-                        var dragCallback = drag.getValue(MouseManager._activeElement).dragCallback;
-                        if (dragCallback != null)
-                            dragCallback(e.clientX, e.clientY);
-                    }
-                }
-            };
             MouseManager.prototype._onMouseUp = function (e) {
                 var target = e.target.closest("[data-clickable]");
                 if (target == null)
@@ -3695,6 +3703,30 @@ var celestials;
                 }
                 if (mouseup.containsKey(target))
                     mouseup.getValue(target)(e.clientX, e.clientY);
+            };
+            MouseManager.prototype._onRightClick = function (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                var target = e.target.closest("[data-clickable]");
+                if (target == null)
+                    return;
+                var rightclick = MouseManager._registry.rightclick;
+                if (rightclick.containsKey(target))
+                    rightclick.getValue(target)(e.clientX, e.clientY);
+            };
+            MouseManager.prototype._onMouseMove = function (e) {
+                if (celestials.App.Paused)
+                    return;
+                MouseManager._lastMousePosition = MouseManager._mousePosition;
+                MouseManager._mousePosition = { x: e.clientX, y: e.clientY };
+                var drag = MouseManager._registry.drag;
+                if (MouseManager._activeElement != null) {
+                    if (drag.containsKey(MouseManager._activeElement)) {
+                        var dragCallback = drag.getValue(MouseManager._activeElement).dragCallback;
+                        if (dragCallback != null)
+                            dragCallback(e.clientX, e.clientY);
+                    }
+                }
             };
             MouseManager.prototype._onMouseOver = function (e) {
                 var target = e.target.closest("[data-clickable]");
@@ -4494,7 +4526,6 @@ var celestials;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    console.log("CLICKED");
                                     pos = celestials_1.managers.MouseManager.MousePosition;
                                     x = pos.x;
                                     y = pos.y;
@@ -4503,9 +4534,8 @@ var celestials;
                                 case 1:
                                     cel = _a.sent();
                                     if (cel != null) {
-                                        console.warn("SIMULATE GRAB");
                                         celestials_1.managers.CelestialsManager.onGrab(cel, x, y);
-                                        celestials_1.managers.MouseManager.startDrag(cel.Node);
+                                        celestials_1.managers.MouseManager.startDrag(cel.MainImage);
                                     }
                                     return [2];
                             }
@@ -5217,6 +5247,20 @@ var celestials;
                     if (this._velocity.y > 0)
                         this._velocity.y = 0;
             };
+            Physics.prototype.load = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        return [2];
+                    });
+                });
+            };
+            Physics.prototype.unload = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        return [2];
+                    });
+                });
+            };
             Physics.prototype.update = function () {
                 return __awaiter(this, void 0, void 0, function () {
                     return __generator(this, function (_a) {
@@ -5379,21 +5423,6 @@ var celestials;
                 }
                 return false;
             };
-            Transform.prototype.update = function () {
-                return __awaiter(this, void 0, void 0, function () {
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                this.moveX(this._moveSpeed.x);
-                                this.moveY(this._moveSpeed.y);
-                                return [4, this.keepInBounds()];
-                            case 1:
-                                _a.sent();
-                                return [2];
-                        }
-                    });
-                });
-            };
             Transform.prototype.load = function () {
                 return __awaiter(this, void 0, void 0, function () {
                     return __generator(this, function (_a) {
@@ -5406,7 +5435,23 @@ var celestials;
             Transform.prototype.unload = function () {
                 return __awaiter(this, void 0, void 0, function () {
                     return __generator(this, function (_a) {
+                        this.removeWallHitListener();
                         return [2];
+                    });
+                });
+            };
+            Transform.prototype.update = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                this.moveX(this._moveSpeed.x);
+                                this.moveY(this._moveSpeed.y);
+                                return [4, this.keepInBounds()];
+                            case 1:
+                                _a.sent();
+                                return [2];
+                        }
                     });
                 });
             };
@@ -6040,6 +6085,23 @@ var celestials;
             CelestialSequencer.prototype.removeStateCompleteListener = function () {
                 this._stateCompleteListener = null;
             };
+            CelestialSequencer.prototype.load = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        return [2];
+                    });
+                });
+            };
+            CelestialSequencer.prototype.unload = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        this.removeSequenceCompleteListener();
+                        this.removeStateChangeListener();
+                        this.removeStateCompleteListener();
+                        return [2];
+                    });
+                });
+            };
             CelestialSequencer.prototype.update = function () {
                 var _this = this;
                 return new Promise(function (resolve, reject) {
@@ -6185,6 +6247,12 @@ var celestials;
                 });
             };
             Moods.prototype.unload = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        this.removeMoodListener();
+                        return [2];
+                    });
+                });
             };
             Moods.prototype.update = function () {
                 return __awaiter(this, void 0, void 0, function () {
@@ -6307,6 +6375,11 @@ var celestials;
                 });
             };
             Relationships.prototype.unload = function () {
+                return __awaiter(this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        return [2];
+                    });
+                });
             };
             Relationships.prototype.update = function () {
                 return __awaiter(this, void 0, void 0, function () {

@@ -234,37 +234,6 @@
             if(mousedown.containsKey(target))
                 mousedown.getValue(target)();
         }
-        private _onRightClick(e:MouseEvent) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            let target:HTMLElement = (e.target as HTMLElement).closest("[data-clickable]") as HTMLElement;
-            if(target == null) return;
-
-            //get registries
-            let { rightclick } = MouseManager._registry;
-
-            //see if our target is registered
-            if(rightclick.containsKey(target))
-                rightclick.getValue(target)(e.clientX, e.clientY);
-        }
-        private _onMouseMove(e:MouseEvent) {
-            //set mouse position
-            MouseManager._lastMousePosition = MouseManager._mousePosition;
-            MouseManager._mousePosition = { x: e.clientX, y: e.clientY };
-
-            //get registries
-            let { drag } = MouseManager._registry;
-
-            //listen for drag
-            if(MouseManager._activeElement != null) {
-                //look for drag function
-                if(drag.containsKey(MouseManager._activeElement)) {
-                    let { dragCallback } = drag.getValue(MouseManager._activeElement);
-                    if(dragCallback != null)
-                        dragCallback(e.clientX, e.clientY);
-                }
-            }
-        }
         private _onMouseUp(e:MouseEvent) {
             let target:HTMLElement = (e.target as HTMLElement).closest("[data-clickable]") as HTMLElement;
                 if(target == null) return;
@@ -287,6 +256,37 @@
             //see if our target is registered
             if(mouseup.containsKey(target))
             mouseup.getValue(target)(e.clientX, e.clientY);
+        }
+        private _onRightClick(e:MouseEvent) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            let target:HTMLElement = (e.target as HTMLElement).closest("[data-clickable]") as HTMLElement;
+            if(target == null) return;
+
+            //get registries
+            let { rightclick } = MouseManager._registry;
+
+            //see if our target is registered
+            if(rightclick.containsKey(target))
+                rightclick.getValue(target)(e.clientX, e.clientY);
+        }
+        private _onMouseMove(e:MouseEvent) {
+            if(App.Paused) return;
+            //set mouse position
+            MouseManager._lastMousePosition = MouseManager._mousePosition;
+            MouseManager._mousePosition = { x: e.clientX, y: e.clientY };
+
+            //get registries
+            let { drag } = MouseManager._registry;
+            //listen for drag
+            if(MouseManager._activeElement != null) {
+                //look for drag function
+                if(drag.containsKey(MouseManager._activeElement)) {
+                    let { dragCallback } = drag.getValue(MouseManager._activeElement);
+                    if(dragCallback != null)
+                        dragCallback(e.clientX, e.clientY);
+                }
+            }
         }
 
         private _onMouseOver(e:MouseEvent) {

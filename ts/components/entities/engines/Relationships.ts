@@ -124,7 +124,7 @@ namespace celestials.engines {
         public async load() {
             
         }
-        public unload() {
+        public async unload() {
 
         }
 

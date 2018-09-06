@@ -139,8 +139,9 @@ namespace celestials.entities {
                 }
             });
         }
-        public unload() {
-            
+        public async unload() {
+            await this._transform.unload();
+            await this._physics.unload();
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         /*---------------------------------------------- GETS & SETS ---------------------------------*/

@@ -97,8 +97,8 @@ namespace celestials.engines {
         public async load() {
             this._usesMood = App.UsesMood;
         }
-        public unload() {
-
+        public async unload() {
+            this.removeMoodListener();
         }
 
         public async update() {

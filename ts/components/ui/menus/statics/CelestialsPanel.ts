@@ -77,7 +77,6 @@ namespace celestials.ui.menus {
         }
         /*---------------------------------------------- EVENTS --------------------------------------*/
         private async _onCelestialsItemClicked(item:components.Item, x:number, y:number) {
-            console.log("CLICKED");
             const pos = managers.MouseManager.MousePosition;
             x = pos.x;
             y = pos.y;
@@ -85,11 +84,10 @@ namespace celestials.ui.menus {
             let template = item.Node.querySelector(".name").innerHTML;
             let cel:entities.Celestial = await managers.CelestialsManager.addCelestialByLookupAtPosition(template, x, y);
             if(cel != null) {
-                console.warn("SIMULATE GRAB");
                 //fake grab
                 managers.CelestialsManager.onGrab(cel, x, y);
                 //drag the celestial
-                managers.MouseManager.startDrag(cel.Node);
+                managers.MouseManager.startDrag(cel.MainImage);
             }
         }
         /*---------------------------------------------- GETS & SETS ---------------------------------*/

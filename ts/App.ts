@@ -126,6 +126,9 @@ namespace celestials {
             //load in initial celestial
             if(managers.CelestialsManager.getTemplateByLookup("solaris") != null)
                     await managers.CelestialsManager.addCelestialByLookup("solaris");
+            // if(managers.CelestialsManager.getTemplateByLookup("anthony") != null)
+            //         await managers.CelestialsManager.addCelestialByLookup("anthony");
+
             
             
             // return;
