@@ -1593,7 +1593,6 @@ var celestials;
                                                 template = celestials.managers.CelestialsManager.getCelestialTemplate(this.Lookup);
                                                 this._imagesLookup = template.ImagesLookup.clone();
                                                 this._icon = template.Icon.cloneNode(true);
-                                                console.log("loaded all images!");
                                                 if (lookup == null)
                                                     throw new Error("Celestial has no lookup property!");
                                                 if (name_1 == null)
@@ -1601,7 +1600,6 @@ var celestials;
                                                 if (images == null && spritesheets == null)
                                                     throw new Error("No images/spritesheets were supplied.");
                                                 this._container.appendChild(this._node);
-                                                console.log(this._imagesLookup.FullList);
                                                 return [4, this._moods.load()];
                                             case 3:
                                                 _b.sent();
@@ -1617,7 +1615,6 @@ var celestials;
                                                 this._overlayMenu = new celestials.ui.menus.CelestialOverlay(this);
                                                 this._overlayMenu.show();
                                                 this._node.parentNode.appendChild(this._overlayMenu.Node);
-                                                console.warn("LOADED ALL OF : " + this.Name);
                                                 this._size = (this.Height / celestials.App.Bounds.Height) * this._scale;
                                                 celestials.systems.Collision.addToCollisionSystem(this);
                                                 this._collisionObject = celestials.systems.Collision.getCollisionObject(this);
@@ -2756,6 +2753,7 @@ var celestials;
                                     return [2, null];
                                 celestial.Transform.X = x;
                                 celestial.Transform.Y = y + celestial.Height;
+                                console.warn("FINISHED LOADING AT POSITION: ", x, y);
                                 return [2, celestial];
                         }
                     });
@@ -3622,7 +3620,6 @@ var celestials;
             };
             MouseManager.startDrag = function (node) {
                 MouseManager._activeElement = node;
-                this.simuluateMouseDown(node);
             };
             MouseManager.simuluateMouseDown = function (node, x, y) {
                 var mouseEvent = new MouseEvent('mousedown', {
@@ -4074,7 +4071,7 @@ var celestials;
                     this._inputNode = inputNode;
                     this._collapsableNode = collapsableNode;
                     this._changeListener = changeListener;
-                    this._collapsableHeight = (this._collapsableNode != null) ? this._collapsableNode.getBoundingClientRect().height : 0;
+                    this._collapsableHeight = (this._collapsableNode != null) ? this._collapsableNode.scrollHeight : 0;
                     console.warn("SET SIZE OF TOGGLE: " + this._collapsableHeight);
                     this._inputNode.addEventListener("change", this._onToggleChanged.bind(this));
                     this._onToggleChanged();
@@ -4091,7 +4088,7 @@ var celestials;
                     if (this._collapsableNode != null) {
                         if (this._inputNode.checked) {
                             console.warn(this._collapsableHeight);
-                            this._collapsableNode.style.maxHeight = "300px";
+                            this._collapsableNode.style.maxHeight = this._collapsableHeight + "px";
                             this._collapsableNode.classList.remove("hide");
                         }
                         else {
@@ -4493,16 +4490,20 @@ var celestials;
                 };
                 CelestialsPanel.prototype._onCelestialsItemClicked = function (item, x, y) {
                     return __awaiter(this, void 0, void 0, function () {
-                        var template, cel;
+                        var pos, template, cel;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
                                     console.log("CLICKED");
+                                    pos = celestials_1.managers.MouseManager.MousePosition;
+                                    x = pos.x;
+                                    y = pos.y;
                                     template = item.Node.querySelector(".name").innerHTML;
                                     return [4, celestials_1.managers.CelestialsManager.addCelestialByLookupAtPosition(template, x, y)];
                                 case 1:
                                     cel = _a.sent();
                                     if (cel != null) {
+                                        console.warn("SIMULATE GRAB");
                                         celestials_1.managers.CelestialsManager.onGrab(cel, x, y);
                                         celestials_1.managers.MouseManager.startDrag(cel.Node);
                                     }

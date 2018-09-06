@@ -50,6 +50,14 @@
         min-height: 50vh;
         font-size: 1.2em;
         z-index: 90;
+        opacity: 1;
+        pointer-events: all;
+
+        &.hide {
+            display: unset !important;
+            opacity: 0;
+            pointer-events: none;
+        }
     }
 
     &.notifications-bar {
@@ -391,12 +399,15 @@
 
 
     &.celestial-details {
-        top: 200px;
+        // top: 200px;
         left: unset;
         right: 100px;
         @extend %main-overlay;
         width: 100%;
         max-width: 700px;
+        height: 90vh;
+        max-height: 1000px;
+        margin: auto 0;
         z-index: 200;
 
         .view {

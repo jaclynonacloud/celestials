@@ -495,7 +495,13 @@ a {
     max-width: 500px;
     min-height: 50vh;
     font-size: 1.2em;
-    z-index: 90; }
+    z-index: 90;
+    opacity: 1;
+    pointer-events: all; }
+    .overlay-menu.control-panel.hide {
+      display: unset !important;
+      opacity: 0;
+      pointer-events: none; }
   .overlay-menu.notifications-bar {
     top: -50px;
     left: 10vw;
@@ -724,11 +730,13 @@ a {
             max-width: 30vw;
             padding: 8px 5px; }
   .overlay-menu.celestial-details {
-    top: 200px;
     left: unset;
     right: 100px;
     width: 100%;
     max-width: 700px;
+    height: 90vh;
+    max-height: 1000px;
+    margin: auto 0;
     z-index: 200; }
     .overlay-menu.celestial-details .view {
       background: #619fad;
@@ -1353,7 +1361,13 @@ a {
     max-width: 500px;
     min-height: 50vh;
     font-size: 1.2em;
-    z-index: 90; }
+    z-index: 90;
+    opacity: 1;
+    pointer-events: all; }
+    .overlay-menu.control-panel.hide {
+      display: unset !important;
+      opacity: 0;
+      pointer-events: none; }
   .overlay-menu.notifications-bar {
     top: -50px;
     left: 10vw;
@@ -1582,11 +1596,13 @@ a {
             max-width: 30vw;
             padding: 8px 5px; }
   .overlay-menu.celestial-details {
-    top: 200px;
     left: unset;
     right: 100px;
     width: 100%;
     max-width: 700px;
+    height: 90vh;
+    max-height: 1000px;
+    margin: auto 0;
     z-index: 200; }
     .overlay-menu.celestial-details .view {
       background: #619fad;

@@ -89,8 +89,8 @@ namespace celestials.managers{
                 systems.Console.addToConsoleCommands("celestials.removeAll()", ()=>CelestialsManager.removeAllCelestials());
                 //add celestials
                 for(let temp of CelestialsManager.Templates) {
+                    //add a celestial singular | celestials.add(name)
                     systems.Console.addToConsoleCommands(`celestials.add(${temp.Lookup})`, ()=>CelestialsManager.addCelestialByLookup(temp.Lookup));
-                    // systems.Console.addToConsoleCommands(`celestials.add(${temp.Lookup}) {number}`, (number) => { for(let i = 0; i < number; i++); });
 
                     //add a celestial with amount to spawn | celestials.add(name) xx
                     const regExp = `celestials.add\\(${temp.Lookup}\\)\\s\\d*`;
@@ -188,6 +188,7 @@ namespace celestials.managers{
             if(celestial == null) return null;
             celestial.Transform.X = x;
             celestial.Transform.Y = y + celestial.Height;
+            console.warn("FINISHED LOADING AT POSITION: ", x, y);
             return celestial;
         }
 

@@ -546,10 +546,7 @@ namespace celestials.entities {
                     const template = managers.CelestialsManager.getCelestialTemplate(this.Lookup);
                     this._imagesLookup = template.ImagesLookup.clone();
                     this._icon = template.Icon.cloneNode(true) as HTMLImageElement;
-
                     
-
-                    console.log("loaded all images!");
                     //TEST REQUIREMENTS of this entity
                     //needs a lookup
                     if(lookup == null)
@@ -564,9 +561,6 @@ namespace celestials.entities {
                     //put the container in
                     this._container.appendChild(this._node);
 
-                    //load images
-
-                    console.log(this._imagesLookup.FullList);
                     //load the moods
                     await this._moods.load();
                     //load the first logic
@@ -591,7 +585,6 @@ namespace celestials.entities {
                     this._overlayMenu.show();
                     this._node.parentNode.appendChild(this._overlayMenu.Node);
 
-                    console.warn("LOADED ALL OF : " + this.Name);
                     this._size = (this.Height / App.Bounds.Height) * this._scale;
 
 

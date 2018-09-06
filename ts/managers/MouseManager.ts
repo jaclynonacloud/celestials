@@ -174,7 +174,6 @@
          */
         public static startDrag(node:HTMLElement) {
             MouseManager._activeElement = node;
-            this.simuluateMouseDown(node);
         }
         
 
