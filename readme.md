@@ -5,10 +5,13 @@ A desktop buddies application with customizable .json resources.
 This is a desktop buddies application built with electron in mind, as a tray application. 
 Using JSON, buddies can be customized without needing to recompile an application, allowing an end user to add and alter any buddy they like using a simple JSON file.
 
-**How to Use**
+**How to Setup**
 - **`npm install`** - Install the dependencies required.
 - **`npm start`** - Start the electron application.
 
+
+## How to Use
+I will be building a documents to help understand the nuances of building out the json files once the project is closer to a completed concept.
 
 ### Known Issues:
 - The tray options will not run properly, as the RemoteManager.ts has been commented out for development within a browser.
