@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"target": "ES5",
+		"sourceMap": true,
+		"module": "amd",
+		"lib": ["es6" , "dom"],
+		"outFile": "js/celestials.js",
+		"removeComments": true
+	}
+}

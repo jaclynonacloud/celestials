@@ -1,0 +1,37 @@
+{
+  "name": "celestials",
+  "version": "0.3.0",
+  "author": "Jaclyn Staples",
+  "description": "A screen buddies application powered by JSON and spritesheets.",
+  "main": "js/background.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "webpack"
+  },
+  "build": {
+    "appId": "jaclynonacloud.Celestials",
+    "mac": {
+      "category": "screen.buddies"
+    }
+  },
+  "devDependencies": {
+    "electron": "^2.0.5"
+  },
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "gulp-concat": "^2.6.1",
+    "gulp": "^3.9.1",
+    "gulp-wait": "^0.0.2",
+    "gulp-sass": "^4.0.1",
+    "merge-stream": "^1.0.1"
+  },
+  "keywords": [
+    "celestials",
+    "desktop",
+    "buddies",
+    "desktopbuddies",
+    "jaclynonacloud",
+    "json"
+  ],
+  "license": "ISC"
+}

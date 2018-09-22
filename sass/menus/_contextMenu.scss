@@ -1,0 +1,40 @@
+.context-menu {
+    position: absolute;
+    display: flex;
+    flex-flow: column wrap;
+    background: #f4f5f4;
+    max-height: 70vh;
+    font-size: 0.8em;
+    z-index: 40;
+    pointer-events: all;
+
+    > .name {
+        width: 100%;
+        text-align: center;
+        font-weight: 600;
+        font-size: 1.1em;
+    }
+
+    > .type {
+        width: 100%;
+        text-align: center;
+        font-style: italic;
+    }
+    > .type::after, .context-menu > .type::before {
+        content: '"';
+    }
+
+
+
+    &.celestial {
+        min-width: 150px;
+        min-height: 250px;
+        z-index: 50;
+    }
+
+    &.application {
+        min-width: 180px;
+        z-index: 60;
+        border-radius: 5px 0;
+    }
+}

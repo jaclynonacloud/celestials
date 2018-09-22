@@ -1,0 +1,77 @@
+@font-face {
+    font-family: "Quicksand-Light";
+    src: url('./../fonts/Quicksand/Quicksand-Light.ttf');
+}
+@font-face {
+    font-family: "Quicksand-Regular";
+    src: url('./../fonts/Quicksand/Quicksand-Regular.ttf');
+}
+
+
+
+
+html, body {
+    background: rgba(0, 0, 0, 0);
+    font-family: 'Quicksand-Light', sans-serif;
+    overflow: hidden;
+    background: black;
+}
+
+a {
+    color: #619fad;
+    text-decoration: none;
+}
+
+
+.hide {
+    display: none !important;
+}
+.temp-cursor {
+    cursor: pointer !important;
+}
+.opacity-0 {
+    opacity: 0;
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+%ui-font {
+    font-family: 'Quicksand-Light', sans-serif;
+}
+
+$menuClose: #8d3232;
+$menuCloseHover: #702929;
+$menuBackgroundColor: #f4f5f4;
+$menuBackgroundColorDark: #e1e6e1;
+$menuAccentColor: #79c798;
+$menuAccentColorAlt: #619fad;
+
+$successColor: #2d7c3a;
+$failColor: #7c2d2d;
+$notifyColor: #2d527c;
+
+.--success {
+    color: $successColor !important;
+}
+.--fail {
+    color: $failColor !important;
+}
+.--notify {
+    color: $notifyColor !important;
+}
+
+
+
+// Partials Here
+@import "celestial";
+@import "icons";
+@import "effects";
+@import "menus/components";
+@import "menus/overlayMenu";
+@import "menus/contextMenu";

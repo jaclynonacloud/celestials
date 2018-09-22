@@ -1,0 +1,371 @@
+/* Menu Components */
+.ctx-dropdown-group {
+    background: #eef0ee;
+    display: flex;
+    flex-flow: column;
+    min-width: 100%;
+    width: max-content;
+
+    .ctx-dropdown-name {
+        background: #e1e6e1;
+        font-size: 1.0em;
+        padding: 3px 10px;
+    }
+    .ctx-dropdown {
+        display: flex;
+        flex-flow: column wrap;
+        max-height: 450px;
+        font-size: 0.9em;
+    }
+    ul.ctx-dropdown, .ctx-dropdown ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .ctx-dropdown li:not(.ctx-dropdown-2) {
+        padding: 4px 15px;
+        z-index: 3;
+    }
+    .ctx-dropdown > li {
+        cursor: pointer;
+    }
+    .ctx-dropdown > li:hover {
+        background: #94a89c;
+    }
+    .ctx-dropdown-header {
+        display: flex;
+        justify-content: space-between;
+        cursor: default !important;
+    }
+    .ctx-dropdown-header:hover + .ctx-dropdown-2 {
+        display: block;
+    }
+    .ctx-dropdown-2 {
+        position: relative;
+        top: -22px;
+        display: none;
+        z-index: 4;
+    }
+    .ctx-dropdown-2:hover {
+        display: block;
+    }
+    .ctx-dropdown-2 ul {
+        position: absolute;
+        background: #eaf0ea;
+        top: 0;
+        left: 100%;
+        min-width: 120px;
+        width: max-content;
+    }
+    .ctx-dropdown-2 li {
+        padding: 4px !important;
+    }
+    .ctx-dropdown-2 li:hover {
+        background: #e1ebe5;
+    }
+}
+
+
+
+$ui-greyed : #ccc;
+$ui-success : #44ce5b;
+$ui-font-color: #5f5f5f;
+.ui {
+    user-select: none;
+    color: $ui-font-color;
+
+    &.row {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+    }
+    &.space-around {
+        width: 100%;
+        justify-content: space-around;
+    }
+    &.flex-1 {
+        flex: 1;
+    }
+    &.half {
+        flex: 1;
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: center;
+        width: 50%;
+    }
+
+    &.banner {
+        background: $menuAccentColor;
+        width: 100%;
+        padding: 5px 15px;
+        box-sizing: border-box;
+        color: white;
+        font-size: 1.2em;
+    }
+
+    &.toolbar {
+        display: flex;
+        justify-content: space-between;
+        background: mix($menuBackgroundColor, $menuBackgroundColorDark, 30);
+        width: 100%;
+        padding: 10px 15px;
+        padding-left: 10px;
+        color: mix($ui-font-color, black, 50);
+        font-size: 1.2em;
+        box-sizing: border-box;
+        cursor: default;
+        font-family: 'Quicksand-Regular', sans-serif;
+
+        .name {
+            justify-self: flex-start;
+        }
+    }
+    &.close {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: $menuClose;
+        width: max-content;
+        font-size: 0.8em;
+        border-radius: 15px;
+        cursor: pointer;
+        
+        &:hover {
+            color: $menuCloseHover;
+            transform: scale(1.2);
+        }
+    }
+    &.button {
+        align-self: center;
+        background: $menuBackgroundColorDark;
+        width: max-content;
+        padding: 10px;
+        color: mix($ui-font-color, black, 50);
+        cursor: pointer;
+        transition: ease background 0.25s;
+        box-sizing: border-box;
+
+        &:hover {
+            background: mix($menuBackgroundColorDark, $ui-success, 50);
+        }
+    }
+    &.toggle-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        box-sizing: border-box;
+        cursor: pointer;
+        transition: background-color ease 0.25s;
+
+        &:hover {
+            background: mix($menuBackgroundColor, $menuBackgroundColorDark, 60);
+        }
+
+        &--indented {
+            background: mix($menuBackgroundColor, $menuAccentColor, 90);
+            padding-left: 30px;
+
+            &:hover {
+                background: mix($menuBackgroundColor, $menuAccentColor, 70);
+            }
+        }
+    }
+    &.toggle-container {
+        position: relative;
+        display: inline-block;
+        width: 45px;
+        height: 25px;
+        isolation: isolate;
+        
+
+        input { display: none; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 25px;
+
+            &::before {
+                position: absolute;
+                content: "";
+                width: 20px;
+                height: 20px;
+                left: 3px;
+                bottom: 3px;
+                background-color: white;
+                -webkit-transition: .4s;
+                transition: .4s all;
+                border-radius: 15px;
+            }
+        }
+
+        input:checked + .slider {
+            background-color: $ui-success;
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px $ui-success;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(20px);
+            -ms-transform: translateX(20px);
+            transform: translateX(20px);
+        }
+
+    }
+
+    &.toggle-collapsable {
+        transition: all ease-in 0.5s;
+        padding: 6px 18px;
+        overflow: hidden;
+        &.hide {
+            display: block !important;
+            max-height: 0;
+            padding: 0 18px;
+        }
+    }
+
+    &.radio-group {
+        margin: 3px 5px;
+
+        input {
+            display: none;
+        }
+
+        input:checked + .button {
+            background: mix($ui-success, white, 60);
+        }
+    }
+
+
+
+    &.list {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        padding: 5px 15px;
+        box-sizing: border-box;
+
+        &.grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 170px);
+            grid-auto-rows: 1fr;
+
+            .item {
+                display: flex;
+                flex-flow: column;
+                justify-content: center;
+                align-items: center;
+            }
+        }
+    }
+    &.item:hover {
+        background: mix($menuBackgroundColor, $menuBackgroundColorDark, 60);
+    }
+
+
+    &.progress {
+        position: relative;
+        background: mix($menuBackgroundColorDark, black, 95);
+        width: 100%;
+        height: 10px;
+        border-radius: 10px;
+        overflow: hidden;
+
+        @keyframes low-animation {
+            0% { background: #cea2a2; }
+            33% { background: mix($menuBackgroundColorDark, black, 95); }
+            66% { background: mix($menuBackgroundColorDark, black, 95); }
+            100% { background: #cea2a2; }
+        }
+        &.low {
+            background: #816666;
+            animation: low-animation 3.5s;
+            animation-iteration-count: infinite;
+        }
+
+        
+        &.low div{ background: #723939; }
+        &.high div{ background: #498649; }
+
+        div {
+            display: inline;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background: $menuAccentColorAlt;
+            border-radius: 10px;
+            transition: all ease 0.5s;
+
+        }
+    }
+
+
+    &.button-rows {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        width: max-content;
+        margin: 0 auto;
+
+        > * {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+    }
+}
+
+
+// Custom Scrollbar
+::-webkit-scrollbar {
+    position: relative;
+    width: 20px;
+    overflow: hidden;
+}
+::-webkit-scrollbar-track {
+    background: mix($menuBackgroundColorDark, $menuBackgroundColor, 80);
+}
+::-webkit-scrollbar-thumb {
+    background: mix($menuAccentColor, seagreen, 80);
+
+    &:hover {
+        background: mix($menuAccentColor, seagreen, 40);
+    }
+}
+::-webkit-scrollbar-button {
+    background: ghostwhite;
+}
+::-webkit-scrollbar-button:vertical:decrement {
+    width: 20px;
+    height: 20px;
+    background: url('./../res/icons/scroll-arrow.png') no-repeat;
+
+    &:hover {
+        background-color: mix(ghostwhite, $menuBackgroundColorDark, 40);
+    }
+
+    &:end { display: none; }
+}
+::-webkit-scrollbar-button:vertical:increment {
+    width: 20px;
+    height: 20px;
+    background: url('./../res/icons/scroll-arrow.png') no-repeat 0 -20px;
+
+    &:hover {
+        background-color: mix(ghostwhite, $menuBackgroundColorDark, 40) 
+    }
+
+    &:start { display: none; }
+}

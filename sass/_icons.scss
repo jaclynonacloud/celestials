@@ -1,0 +1,19 @@
+.icon {
+    padding: 3px;
+    box-sizing: border-box;
+
+    $edit-color : #3e7445;
+    $info-color : #3e4874;
+    $delete-color : #743e3e;
+
+    &.popout::after { content: '\27C0'; }
+    &.edit { transform:rotate(120deg); color: $edit-color; }
+    &.edit::after { content: '\270F'; }
+    &.info { color: $info-color; }
+    &.info::after { content: '\24D8'; }
+    &.delete { color: $delete-color; }
+    &.delete::after { content: '\2716'; }
+    &.confirm::after { content: '\2714'; }
+
+    &.pointer { cursor: pointer; }
+}
