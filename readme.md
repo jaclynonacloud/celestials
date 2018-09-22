@@ -13,9 +13,9 @@ Using JSON, buddies can be customized without needing to recompile an applicatio
 ## How to Use
 I will be building docs to help understand the nuances of building out the json files once the project is closer to a completed concept.
 Debugging
-- **C - Open control panel.
-- **P - Pause application.
-- **Num 1 - Show splash screen.
+- C - Open control panel.
+- P - Pause application.
+- Num 1 - Show splash screen.
 
 ### Known Issues:
 - The tray options will not run properly, as the RemoteManager.ts has been commented out for development within a browser.
